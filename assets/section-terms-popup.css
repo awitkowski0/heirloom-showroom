@@ -67,14 +67,24 @@
 .terms-popup__actions {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: center;
+  width: 100%;
+}
+
+.terms-popup__links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
 }
 
 .terms-popup__link {
-  font-size: 1rem;
+  font-size: 1.125rem;
   color: rgb(var(--color-link));
   text-decoration: underline;
+  padding: 0.5rem;
 }
 
 .terms-popup__link:hover {
@@ -111,11 +121,20 @@
     flex-direction: row;
     justify-content: center;
     flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .terms-popup__links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1.5rem;
+    width: auto;
   }
 
   .terms-popup__link {
     margin-bottom: 0;
+    padding: 0;
   }
 
   .terms-popup__buttons {
