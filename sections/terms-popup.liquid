@@ -4,6 +4,8 @@
 {%- style -%}
   .terms-popup {
     --popup-z-index: 9999;
+    --terms-title-size: {{ section.settings.terms_title_size }}px;
+    --terms-content-size: {{ section.settings.terms_content_size }}px;
   }
 {%- endstyle -%}
 
@@ -11,10 +13,10 @@
   <div class="terms-popup-overlay" id="terms-popup-overlay" data-enabled="{{ section.settings.enable_terms_popup }}">
     <div class="terms-popup" id="terms-popup" role="dialog" aria-modal="true" aria-labelledby="terms-popup-title">
       <div class="terms-popup__content">
-        <h2 class="terms-popup__title" id="terms-popup-title">
+        <h2 class="terms-popup__title" id="terms-popup-title" style="font-size: {{ section.settings.terms_title_size }}px;">
           {{ section.settings.terms_title | default: 'Terms of Service' }}
         </h2>
-        <div class="terms-popup__body">
+        <div class="terms-popup__body" style="font-size: {{ section.settings.terms_content_size }}px;">
           {{ section.settings.terms_content }}
         </div>
         <div class="terms-popup__actions">
@@ -57,10 +59,28 @@
       "label": "Popup Title"
     },
     {
+      "type": "range",
+      "id": "terms_title_size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "default": 32,
+      "label": "Title Font Size (px)"
+    },
+    {
       "type": "richtext",
       "id": "terms_content",
       "default": "<p>By continuing to browse and use this website, you agree to our terms and conditions.</p>",
       "label": "Popup Content"
+    },
+    {
+      "type": "range",
+      "id": "terms_content_size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "default": 18,
+      "label": "Content Font Size (px)"
     },
     {
       "type": "text",
