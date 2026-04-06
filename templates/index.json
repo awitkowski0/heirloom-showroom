@@ -15,16 +15,16 @@
         "hotspot_eaexgg": {
           "type": "hotspot",
           "settings": {
-            "product": "crib-test",
+            "product": "mission-style",
             "label": "Mission Crib",
-            "position_x": 50,
+            "position_x": 49,
             "position_y": 50
           }
         },
         "hotspot_WJfdj3": {
           "type": "hotspot",
           "settings": {
-            "product": "crib-test",
+            "product": "mission-style",
             "label": "Mission Dresser",
             "position_x": 82,
             "position_y": 57
@@ -57,7 +57,7 @@
       ],
       "name": "Showroom",
       "settings": {
-        "room_image": "shopify://shop_images/Mision_Crib_Day_Bed_edited_a22d9881-f28b-4b06-adab-61a35ab2bf1d.jpg",
+        "room_image": "shopify://shop_images/FQP101_Mission_Crib_Day_Bed.jpg",
         "heading": "",
         "heading_alignment": "center",
         "enable_parallax": true,
