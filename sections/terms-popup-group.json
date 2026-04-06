@@ -1,0 +1,16 @@
+{
+  "name": "Terms Popup",
+  "sections": {
+    "terms-popup": {
+      "type": "terms-popup",
+      "settings": {
+        "enable_terms_popup": true,
+        "terms_title": "Terms of Service",
+        "terms_content": "<p>By continuing to browse and use this website, you agree to our terms and conditions.</p>",
+        "accept_button_text": "I Accept",
+        "decline_button_text": "Decline",
+        "terms_link_text": "Read full terms"
+      }
+    }
+  }
+}

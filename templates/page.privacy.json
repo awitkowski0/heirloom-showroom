@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-page",
+      "settings": {
+        "padding_top": 40,
+        "padding_bottom": 40,
+        "color_scheme": "scheme-1"
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

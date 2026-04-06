@@ -1,0 +1,84 @@
+{{ 'section-terms-popup.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'terms-popup.js' | asset_url }}" defer="defer"></script>
+
+{%- style -%}
+  .terms-popup {
+    --popup-z-index: 9999;
+  }
+{%- endstyle -%}
+
+{%- if section.settings.enable_terms_popup -%}
+  <div class="terms-popup-overlay" id="terms-popup-overlay" data-enabled="{{ section.settings.enable_terms_popup }}">
+    <div class="terms-popup" id="terms-popup" role="dialog" aria-modal="true" aria-labelledby="terms-popup-title">
+      <div class="terms-popup__content">
+        <h2 class="terms-popup__title" id="terms-popup-title">
+          {{ section.settings.terms_title | default: 'Terms of Service' }}
+        </h2>
+        <div class="terms-popup__body">
+          {{ section.settings.terms_content }}
+        </div>
+        <div class="terms-popup__actions">
+          {%- for policy in shop.policies -%}
+            {%- if policy != blank -%}
+              <a href="{{ policy.url }}" class="terms-popup__link">
+                {{ policy.title }}
+              </a>
+            {%- endif -%}
+          {%- endfor -%}
+          <div class="terms-popup__buttons">
+            <button type="button" class="button button--secondary" id="terms-decline">
+              {{ section.settings.decline_button_text | default: 'Decline' }}
+            </button>
+            <button type="button" class="button button--primary" id="terms-accept">
+              {{ section.settings.accept_button_text | default: 'I Accept' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Terms Popup",
+  "class": "terms-popup-section",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable_terms_popup",
+      "default": true,
+      "label": "Enable Terms Acceptance Popup"
+    },
+    {
+      "type": "text",
+      "id": "terms_title",
+      "default": "Terms of Service",
+      "label": "Popup Title"
+    },
+    {
+      "type": "richtext",
+      "id": "terms_content",
+      "default": "<p>By continuing to browse and use this website, you agree to our terms and conditions.</p>",
+      "label": "Popup Content"
+    },
+    {
+      "type": "text",
+      "id": "accept_button_text",
+      "default": "I Accept",
+      "label": "Accept Button Text"
+    },
+    {
+      "type": "text",
+      "id": "decline_button_text",
+      "default": "Decline",
+      "label": "Decline Button Text"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Terms Popup"
+    }
+  ]
+}
+{% endschema %}
