@@ -227,24 +227,12 @@
         "padding_top": 36,
         "padding_bottom": 28
       }
-    },
-    "terms_popup_VE3yzt": {
-      "type": "terms-popup",
-      "name": "Terms Popup",
-      "settings": {
-        "enable_terms_popup": true,
-        "terms_title": "Terms of Service",
-        "terms_content": "<p>By continuing to browse and use this website, you agree to our terms and conditions.</p>",
-        "accept_button_text": "I Accept",
-        "decline_button_text": "Decline"
-      }
     }
   },
   "order": [
     "main",
     "image-with-text",
     "multicolumn",
-    "related-products",
-    "terms_popup_VE3yzt"
+    "related-products"
   ]
 }
