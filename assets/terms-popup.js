@@ -46,8 +46,8 @@ function declineTerms() {
   setCookie('terms_declined', 'true', 30);
   document.cookie = 'terms_accepted=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
   hideTermsPopup();
-  document.body.classList.add('terms-declined');
-  showDeclinedMessage();
+  window.location.href = '/';
+}
 }
 
 function showDeclinedMessage() {
