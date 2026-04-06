@@ -32,13 +32,31 @@ function hideTermsPopup() {
 
 function acceptTerms() {
   setCookie('terms_accepted', 'true', 365);
+  document.cookie = 'terms_declined=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
   hideTermsPopup();
 }
 
 function declineTerms() {
   setCookie('terms_declined', 'true', 30);
+  document.cookie = 'terms_accepted=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
   hideTermsPopup();
-  window.location.href = '/';
+  showDeclinedMessage();
+}
+
+function showDeclinedMessage() {
+  const message = document.createElement('div');
+  message.id = 'terms-declined-message';
+  message.className = 'terms-declined-message';
+  message.innerHTML = `
+    <p>You must accept our terms and conditions to make purchases.</p>
+    <button onclick="this.parentElement.remove(); showTermsPopup();">Accept Terms</button>
+  `;
+  document.body.appendChild(message);
+}
+
+function checkTermsAccepted() {
+  const declined = getCookie('terms_declined');
+  return !declined;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,7 +66,48 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!accepted && !declined) {
     showTermsPopup();
   }
+  
+  if (declined) {
+    blockAddToCart();
+  }
 });
+
+function blockAddToCart() {
+  document.body.classList.add('terms-declined');
+  
+  const cartForms = document.querySelectorAll('form[action*="/cart/add"], [data-shopify-edit-product], [data-product-form]');
+  
+  cartForms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showDeclinedMessage();
+      return false;
+    });
+  });
+  
+  const addToCartButtons = document.querySelectorAll('[name="add"], [data-shopify-buy-button]');
+  addToCartButtons.forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      if (!checkTermsAccepted()) {
+        e.preventDefault();
+        showDeclinedMessage();
+        return false;
+      }
+    });
+  });
+  
+  const buyButtons = document.querySelectorAll('.shopify-payment-button__button');
+  buyButtons.forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      if (!checkTermsAccepted()) {
+        e.preventDefault();
+        showDeclinedMessage();
+        return false;
+      }
+    });
+  });
+}
 
 document.addEventListener('shopify:section:load', function(event) {
   const overlay = document.getElementById('terms-popup-overlay');
@@ -62,6 +121,10 @@ document.addEventListener('shopify:section:load', function(event) {
   
   if (!accepted && !declined) {
     showTermsPopup();
+  }
+  
+  if (declined) {
+    blockAddToCart();
   }
 });
 
