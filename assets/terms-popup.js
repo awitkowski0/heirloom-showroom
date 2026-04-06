@@ -48,7 +48,6 @@ function declineTerms() {
   hideTermsPopup();
   window.location.href = '/';
 }
-}
 
 function showDeclinedMessage() {
   const existing = document.getElementById('terms-declined-message');

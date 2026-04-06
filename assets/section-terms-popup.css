@@ -12,6 +12,7 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  padding: 1rem;
 }
 
 .terms-popup-overlay.active {
@@ -22,8 +23,8 @@
 .terms-popup {
   background-color: rgb(var(--color-background));
   max-width: 70rem;
-  width: 95%;
-  max-height: 85vh;
+  width: 100%;
+  max-height: 90vh;
   overflow-y: auto;
   border-radius: var(--buttons-radius);
   box-shadow: 0 4rem 4rem -1rem rgba(var(--color-foreground), 0.1);
@@ -36,35 +37,37 @@
 }
 
 .terms-popup__content {
-  padding: 3rem 4rem;
+  padding: 2rem;
 }
 
 .terms-popup__title {
   font-family: var(--font-heading-family);
-  font-size: calc(var(--font-heading-scale) * 2rem);
-  margin-bottom: 1.5rem;
+  font-size: calc(var(--font-heading-scale) * 1.75rem);
+  margin-bottom: 1rem;
   color: rgb(var(--color-foreground));
+  text-align: center;
 }
 
 .terms-popup__body {
   font-family: var(--font-body-family);
   font-size: 1.125rem;
-  line-height: 1.7;
+  line-height: 1.6;
   color: rgb(var(--color-foreground));
   opacity: 0.85;
-  margin-bottom: 2rem;
-  max-height: 40vh;
+  margin-bottom: 1.5rem;
+  max-height: 45vh;
   overflow-y: auto;
+  text-align: center;
 }
 
 .terms-popup__body p {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .terms-popup__actions {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
 }
 
@@ -79,21 +82,36 @@
 }
 
 .terms-popup__buttons {
-  display: flex;
-  gap: 1.5rem;
   width: 100%;
+  max-width: 300px;
 }
 
 .terms-popup__buttons .button {
-  flex: 1;
+  width: 100%;
   justify-content: center;
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
 }
 
 @media screen and (min-width: 750px) {
+  .terms-popup__content {
+    padding: 3rem 4rem;
+  }
+
+  .terms-popup__title {
+    font-size: calc(var(--font-heading-scale) * 2rem);
+    margin-bottom: 1.5rem;
+  }
+
+  .terms-popup__body {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
   .terms-popup__actions {
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
   }
 
   .terms-popup__link {
@@ -102,7 +120,7 @@
 
   .terms-popup__buttons {
     width: auto;
-    flex: none;
+    max-width: none;
   }
 }
 

@@ -28,9 +28,6 @@
             {%- endif -%}
           {%- endfor -%}
           <div class="terms-popup__buttons">
-            <button type="button" class="button button--secondary" id="terms-decline">
-              {{ section.settings.decline_button_text | default: 'Decline' }}
-            </button>
             <button type="button" class="button button--primary" id="terms-accept">
               {{ section.settings.accept_button_text | default: 'I Accept' }}
             </button>
@@ -87,12 +84,6 @@
       "id": "accept_button_text",
       "default": "I Accept",
       "label": "Accept Button Text"
-    },
-    {
-      "type": "text",
-      "id": "decline_button_text",
-      "default": "Decline",
-      "label": "Decline Button Text"
     }
   ],
   "presets": [
