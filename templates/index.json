@@ -57,7 +57,6 @@
       ],
       "name": "Showroom",
       "settings": {
-        "room_image": "shopify://shop_images/FQP101_Mission_Crib_Day_Bed.jpg",
         "heading": "",
         "heading_alignment": "center",
         "enable_parallax": true,
@@ -230,6 +229,39 @@
         "padding_top": 36,
         "padding_bottom": 36
       }
+    },
+    "1775657524acfeeacd": {
+      "type": "_blocks",
+      "blocks": {
+        "ai_gen_block_6e4eab5_QHXFfR": {
+          "type": "ai_gen_block_6e4eab5",
+          "settings": {
+            "show_hero_label": true,
+            "hero_label": "Product Gallery",
+            "hero_image_count": 6,
+            "hero_columns": 3,
+            "hero_columns_mobile": "2",
+            "show_variant_label": true,
+            "variant_label": "Color & Stain Options",
+            "wood_option_position": "1",
+            "variant_columns": 4,
+            "variant_columns_mobile": "2",
+            "desktop_width_percent": 100,
+            "image_gap": 8,
+            "section_spacing": 30,
+            "image_border_radius": 0,
+            "image_background": "#f6f3ee",
+            "label_color": "#442a22",
+            "label_font_size": 16,
+            "label_spacing": 15
+          },
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "ai_gen_block_6e4eab5_QHXFfR"
+      ],
+      "settings": {}
     }
   },
   "order": [
@@ -238,6 +270,7 @@
     "featured_collection",
     "collage",
     "video",
-    "multicolumn"
+    "multicolumn",
+    "1775657524acfeeacd"
   ]
 }
