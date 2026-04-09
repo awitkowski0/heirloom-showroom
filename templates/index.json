@@ -44,8 +44,7 @@
         "button"
       ],
       "settings": {
-        "image": "shopify://shop_images/Logo_edited.jpg",
-        "image_overlay_opacity": 40,
+        "image_overlay_opacity": 50,
         "image_height": "small",
         "image_behavior": "none",
         "desktop_content_position": "bottom-left",
