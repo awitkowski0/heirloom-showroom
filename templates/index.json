@@ -16,7 +16,7 @@
           "type": "heading",
           "settings": {
             "heading": "Image banner",
-            "heading_size": "h0"
+            "heading_size": "h2"
           }
         },
         "text": {
@@ -44,10 +44,11 @@
         "button"
       ],
       "settings": {
+        "image": "shopify://shop_images/image0.jpg",
         "image_overlay_opacity": 40,
-        "image_height": "large",
+        "image_height": "small",
         "image_behavior": "none",
-        "desktop_content_position": "bottom-center",
+        "desktop_content_position": "bottom-left",
         "desktop_content_alignment": "center",
         "show_text_box": false,
         "color_scheme": "scheme-3",
