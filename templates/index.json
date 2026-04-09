@@ -219,6 +219,39 @@
         "padding_top": 36,
         "padding_bottom": 36
       }
+    },
+    "177574528203b9cca5": {
+      "type": "_blocks",
+      "blocks": {
+        "ai_gen_block_20c39b2_zy3qQQ": {
+          "type": "ai_gen_block_20c39b2",
+          "settings": {
+            "show_label": true,
+            "label_text": "Select color",
+            "label_font_size": 16,
+            "label_color": "#121212",
+            "group_border_color": "#e0e0e0",
+            "group_border_radius": 4,
+            "toggle_bg_color": "#f9f9f9",
+            "toggle_hover_bg_color": "#f0f0f0",
+            "toggle_text_color": "#121212",
+            "swatches_bg_color": "#ffffff",
+            "swatch_size": 60,
+            "swatch_gap": 12,
+            "swatch_border_radius": 4,
+            "swatch_border_color": "#d0d0d0",
+            "selected_border_color": "#121212",
+            "checkmark_bg_color": "#121212",
+            "checkmark_color": "#ffffff",
+            "top_margin": 16
+          },
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "ai_gen_block_20c39b2_zy3qQQ"
+      ],
+      "settings": {}
     }
   },
   "order": [
@@ -227,6 +260,7 @@
     "featured_collection",
     "collage",
     "video",
-    "multicolumn"
+    "multicolumn",
+    "177574528203b9cca5"
   ]
 }
