@@ -43,6 +43,7 @@
         "text",
         "button"
       ],
+      "disabled": true,
       "settings": {
         "image_overlay_opacity": 50,
         "image_height": "small",
@@ -142,6 +143,7 @@
         "product",
         "collection-1"
       ],
+      "disabled": true,
       "settings": {
         "heading": "Multimedia collage",
         "heading_size": "h2",
@@ -155,6 +157,7 @@
     },
     "video": {
       "type": "video",
+      "disabled": true,
       "settings": {
         "heading": "",
         "heading_size": "h1",
@@ -203,6 +206,7 @@
         "column2",
         "column3"
       ],
+      "disabled": true,
       "settings": {
         "title": "",
         "heading_size": "h1",
@@ -251,6 +255,7 @@
       "block_order": [
         "ai_gen_block_20c39b2_zy3qQQ"
       ],
+      "disabled": true,
       "settings": {}
     }
   },
