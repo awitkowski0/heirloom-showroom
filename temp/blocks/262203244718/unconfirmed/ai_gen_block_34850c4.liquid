@@ -1,6 +1,717 @@
+{% doc %}
+  @prompt
+    Create a two-step variant selector for a Shopify product page for a premium furniture brand. Replace the default variant selector with this custom component. It must work as follows:
+    
+    STEP 1 - Wood Type selection:
+    - Display Option1 values (wood types: e.g. Red Wood, Brown Maple, Cherry) as clickable buttons or cards
+    - Only one wood type can be selected at a time
+    - Selecting a wood type filters the available color swatches in Step 2
+    
+    STEP 2 - Color swatch selection:
+    - After a wood type is selected, show only the color swatches for variants that match that wood type (Option1)
+    - Each variant has a metafield reference to a color metaobject. Determine which metafield to use based on product.vendor: if vendor is "OCS" use `custom.ocs_color_options`, if vendor is "PCL" use `custom.color_option_pcl`
+    - The color metaobject (type: color_option) has fields: `color_name` (single_line_text_field), `hex_value` (color), `swatch_image` (file_reference), `vendor` (single_line_text_field)
+    - Display swatches as images (swatch_image primary, hex_value colored circle as fallback)
+    - Only one color can be selected at a time
+    - Selecting a color swatch selects the exact matching variant (wood type + color combo)
+    
+    CART GATING:
+    - The Add to Cart button must remain disabled until both a wood type AND a color have been selected
+    - Show a clear message like "Select a wood type and color to continue" until both are chosen
+    
+    PLACEMENT:
+    - This block must be placed on the product page template, inside the product form, replacing or wrapping the existing variant option selectors
+    - Do NOT place this on the home page or any collection page
+    
+    STYLING:
+    - Clean, minimal, premium furniture brand aesthetic
+    - Wood type buttons should be text-based with an active/selected state
+    - Color swatches should be square thumbnails with a selected state (border or checkmark overlay)
+    - Show the selected color name as text below the swatches
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-variant-selector-{{ ai_gen_id }} {
+    display: block;
+    width: 100%;
+    margin: 24px 0;
+  }
+
+  .ai-variant-selector__step-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+  }
+
+  .ai-variant-selector__label-{{ ai_gen_id }} {
+    display: block;
+    font-size: {{ block.settings.label_font_size }}px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: {{ block.settings.label_color }};
+    text-transform: {{ block.settings.label_text_transform }};
+    letter-spacing: 0.5px;
+  }
+
+  .ai-variant-selector__wood-options-{{ ai_gen_id }} {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .ai-variant-selector__wood-button-{{ ai_gen_id }} {
+    padding: 12px 24px;
+    background-color: {{ block.settings.wood_button_bg }};
+    color: {{ block.settings.wood_button_text }};
+    border: {{ block.settings.wood_button_border_width }}px solid {{ block.settings.wood_button_border }};
+    border-radius: {{ block.settings.wood_button_radius }}px;
+    cursor: pointer;
+    font-size: {{ block.settings.wood_button_font_size }}px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+
+  .ai-variant-selector__wood-button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.wood_button_hover_bg }};
+    color: {{ block.settings.wood_button_hover_text }};
+    border-color: {{ block.settings.wood_button_hover_border }};
+  }
+
+  .ai-variant-selector__wood-button-{{ ai_gen_id }}.active {
+    background-color: {{ block.settings.wood_button_active_bg }};
+    color: {{ block.settings.wood_button_active_text }};
+    border-color: {{ block.settings.wood_button_active_border }};
+  }
+
+  .ai-variant-selector__color-swatches-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax({{ block.settings.swatch_size }}px, 1fr));
+    gap: 12px;
+    opacity: 0.4;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .ai-variant-selector__color-swatches-{{ ai_gen_id }}.enabled {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .ai-variant-selector__swatch-wrapper-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ai-variant-selector__swatch-{{ ai_gen_id }} {
+    width: {{ block.settings.swatch_size }}px;
+    height: {{ block.settings.swatch_size }}px;
+    border: {{ block.settings.swatch_border_width }}px solid {{ block.settings.swatch_border }};
+    border-radius: {{ block.settings.swatch_radius }}px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    background-color: #f5f5f5;
+  }
+
+  .ai-variant-selector__swatch-{{ ai_gen_id }}:hover {
+    border-color: {{ block.settings.swatch_hover_border }};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .ai-variant-selector__swatch-{{ ai_gen_id }}.active {
+    border-color: {{ block.settings.swatch_active_border }};
+    border-width: {{ block.settings.swatch_active_border_width }}px;
+  }
+
+  .ai-variant-selector__swatch-{{ ai_gen_id }}.active::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: {{ block.settings.swatch_checkmark_color }};
+    font-size: 20px;
+    font-weight: bold;
+    background-color: {{ block.settings.swatch_checkmark_bg }};
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-variant-selector__swatch-image-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ai-variant-selector__swatch-color-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ai-variant-selector__swatch-name-{{ ai_gen_id }} {
+    font-size: {{ block.settings.swatch_name_font_size }}px;
+    color: {{ block.settings.swatch_name_color }};
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .ai-variant-selector__message-{{ ai_gen_id }} {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background-color: {{ block.settings.message_bg }};
+    color: {{ block.settings.message_text }};
+    border-radius: {{ block.settings.message_radius }}px;
+    font-size: {{ block.settings.message_font_size }}px;
+    text-align: center;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-variant-selector__wood-options-{{ ai_gen_id }} {
+      gap: 8px;
+    }
+
+    .ai-variant-selector__wood-button-{{ ai_gen_id }} {
+      padding: 10px 18px;
+      font-size: {{ block.settings.wood_button_font_size | times: 0.9 }}px;
+    }
+
+    .ai-variant-selector__color-swatches-{{ ai_gen_id }} {
+      grid-template-columns: repeat(auto-fill, minmax({{ block.settings.swatch_size | times: 0.85 }}px, 1fr));
+      gap: 10px;
+    }
+  }
+{% endstyle %}
+
+<two-step-variant-selector-{{ ai_gen_id }}
+  class="ai-variant-selector-{{ ai_gen_id }}"
+  data-product-id="{{ product.id }}"
+  data-vendor="{{ product.vendor }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="ai-variant-selector__step-{{ ai_gen_id }}">
+    <label class="ai-variant-selector__label-{{ ai_gen_id }}">
+      {{ block.settings.wood_type_label }}
+    </label>
+    <div class="ai-variant-selector__wood-options-{{ ai_gen_id }}" data-wood-options></div>
+  </div>
+
+  <div class="ai-variant-selector__step-{{ ai_gen_id }}">
+    <label class="ai-variant-selector__label-{{ ai_gen_id }}">
+      {{ block.settings.color_label }}
+    </label>
+    <div class="ai-variant-selector__color-swatches-{{ ai_gen_id }}" data-color-swatches></div>
+  </div>
+
+  <div class="ai-variant-selector__message-{{ ai_gen_id }}" data-selection-message>
+    {{ block.settings.selection_message }}
+  </div>
+
+  <script type="application/json" data-variant-data>
+    {
+      "variants": [
+        {% for variant in product.variants %}
+          {
+            "id": {{ variant.id }},
+            "available": {{ variant.available }},
+            "option1": {{ variant.option1 | json }},
+            "option2": {{ variant.option2 | json }},
+            "option3": {{ variant.option3 | json }},
+            {% if product.vendor == 'OCS' %}
+              {% assign color_metafield = variant.metafields.custom.ocs_color_options %}
+            {% elsif product.vendor == 'PCL' %}
+              {% assign color_metafield = variant.metafields.custom.color_option_pcl %}
+            {% else %}
+              {% assign color_metafield = nil %}
+            {% endif %}
+            "colorMetafield": {
+              {% if color_metafield %}
+                "colorName": {{ color_metafield.color_name.value | json }},
+                "hexValue": {{ color_metafield.hex_value.value | json }},
+                {% if color_metafield.swatch_image.value %}
+                  "swatchImage": {{ color_metafield.swatch_image.value | image_url: width: 200 | json }}
+                {% else %}
+                  "swatchImage": null
+                {% endif %}
+              {% else %}
+                "colorName": {{ variant.option2 | json }},
+                "hexValue": null,
+                "swatchImage": null
+              {% endif %}
+            }
+          }{% unless forloop.last %},{% endunless %}
+        {% endfor %}
+      ]
+    }
+  </script>
+</two-step-variant-selector-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class TwoStepVariantSelector{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.selectedWoodType = null;
+        this.selectedColor = null;
+        this.variants = [];
+      }
+
+      connectedCallback() {
+        this.loadVariantData();
+        this.renderWoodOptions();
+        this.setupEventListeners();
+        this.updateAddToCartButton();
+      }
+
+      loadVariantData() {
+        const dataElement = this.querySelector('[data-variant-data]');
+        if (dataElement) {
+          const data = JSON.parse(dataElement.textContent);
+          this.variants = data.variants;
+        }
+      }
+
+      renderWoodOptions() {
+        const woodOptions = [...new Set(this.variants.map(v => v.option1))];
+        const container = this.querySelector('[data-wood-options]');
+        
+        container.innerHTML = woodOptions.map(wood => `
+          <button
+            type="button"
+            class="ai-variant-selector__wood-button-{{ ai_gen_id }}"
+            data-wood-type="${wood}"
+          >
+            ${wood}
+          </button>
+        `).join('');
+      }
+
+      setupEventListeners() {
+        this.querySelectorAll('[data-wood-type]').forEach(button => {
+          button.addEventListener('click', () => this.selectWoodType(button.dataset.woodType));
+        });
+
+        document.addEventListener('click', (e) => {
+          if (e.target.closest('[data-color-swatch]')) {
+            const swatchElement = e.target.closest('[data-color-swatch]');
+            this.selectColor(swatchElement.dataset.colorSwatch);
+          }
+        });
+      }
+
+      selectWoodType(woodType) {
+        this.selectedWoodType = woodType;
+        this.selectedColor = null;
+
+        this.querySelectorAll('[data-wood-type]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.woodType === woodType);
+        });
+
+        this.renderColorSwatches();
+        this.updateAddToCartButton();
+        this.updateMessage();
+      }
+
+      renderColorSwatches() {
+        const container = this.querySelector('[data-color-swatches]');
+        
+        if (!this.selectedWoodType) {
+          container.classList.remove('enabled');
+          return;
+        }
+
+        const availableVariants = this.variants.filter(v => v.option1 === this.selectedWoodType);
+        const uniqueColors = [];
+        const seenColors = new Set();
+
+        availableVariants.forEach(variant => {
+          const colorName = variant.colorMetafield.colorName;
+          if (!seenColors.has(colorName)) {
+            seenColors.add(colorName);
+            uniqueColors.push(variant);
+          }
+        });
+
+        container.innerHTML = uniqueColors.map(variant => {
+          const colorMeta = variant.colorMetafield;
+          const swatchContent = colorMeta.swatchImage
+            ? `<img src="${colorMeta.swatchImage}" alt="${colorMeta.colorName}" class="ai-variant-selector__swatch-image-{{ ai_gen_id }}" loading="lazy">`
+            : colorMeta.hexValue
+            ? `<div class="ai-variant-selector__swatch-color-{{ ai_gen_id }}" style="background-color: ${colorMeta.hexValue};"></div>`
+            : `<div class="ai-variant-selector__swatch-color-{{ ai_gen_id }}" style="background-color: #cccccc;"></div>`;
+
+          return `
+            <div class="ai-variant-selector__swatch-wrapper-{{ ai_gen_id }}">
+              <div
+                class="ai-variant-selector__swatch-{{ ai_gen_id }}"
+                data-color-swatch="${colorMeta.colorName}"
+                role="button"
+                tabindex="0"
+                aria-label="Select ${colorMeta.colorName}"
+              >
+                ${swatchContent}
+              </div>
+              <span class="ai-variant-selector__swatch-name-{{ ai_gen_id }}">${colorMeta.colorName}</span>
+            </div>
+          `;
+        }).join('');
+
+        container.classList.add('enabled');
+      }
+
+      selectColor(colorName) {
+        this.selectedColor = colorName;
+
+        this.querySelectorAll('[data-color-swatch]').forEach(swatch => {
+          swatch.classList.toggle('active', swatch.dataset.colorSwatch === colorName);
+        });
+
+        const selectedVariant = this.variants.find(v => 
+          v.option1 === this.selectedWoodType && 
+          v.colorMetafield.colorName === colorName
+        );
+
+        if (selectedVariant) {
+          this.updateProductVariant(selectedVariant.id);
+        }
+
+        this.updateAddToCartButton();
+        this.updateMessage();
+      }
+
+      updateProductVariant(variantId) {
+        const form = this.closest('form[action*="/cart/add"]');
+        if (form) {
+          const variantInput = form.querySelector('[name="id"]');
+          if (variantInput) {
+            variantInput.value = variantId;
+            variantInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+
+        const url = new URL(window.location);
+        url.searchParams.set('variant', variantId);
+        window.history.replaceState({}, '', url);
+      }
+
+      updateAddToCartButton() {
+        const form = this.closest('form[action*="/cart/add"]');
+        if (!form) return;
+
+        const addToCartButton = form.querySelector('[name="add"]');
+        if (!addToCartButton) return;
+
+        const isComplete = this.selectedWoodType && this.selectedColor;
+        addToCartButton.disabled = !isComplete;
+
+        if (isComplete) {
+          addToCartButton.removeAttribute('disabled');
+        } else {
+          addToCartButton.setAttribute('disabled', 'disabled');
+        }
+      }
+
+      updateMessage() {
+        const messageElement = this.querySelector('[data-selection-message]');
+        if (!messageElement) return;
+
+        const isComplete = this.selectedWoodType && this.selectedColor;
+        messageElement.style.display = isComplete ? 'none' : 'block';
+      }
+    }
+
+    customElements.define('two-step-variant-selector-{{ ai_gen_id }}', TwoStepVariantSelector{{ ai_gen_id }});
+  })();
+</script>
+
 {% schema %}
- {
-   "name": "AI_Block",
-   "tag": "shopify-ai-generated-block"
- }
+{
+  "name": "Two-step variant selector",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Wood type step"
+    },
+    {
+      "type": "text",
+      "id": "wood_type_label",
+      "label": "Wood type label",
+      "default": "Select wood type"
+    },
+    {
+      "type": "range",
+      "id": "wood_button_font_size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Button font size",
+      "default": 14
+    },
+    {
+      "type": "color",
+      "id": "wood_button_bg",
+      "label": "Button background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_text",
+      "label": "Button text",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_border",
+      "label": "Button border",
+      "default": "#121212"
+    },
+    {
+      "type": "range",
+      "id": "wood_button_border_width",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "label": "Button border width",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "wood_button_radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Button border radius",
+      "default": 0
+    },
+    {
+      "type": "color",
+      "id": "wood_button_hover_bg",
+      "label": "Hover background",
+      "default": "#F3F3F3"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_hover_text",
+      "label": "Hover text",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_hover_border",
+      "label": "Hover border",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_active_bg",
+      "label": "Active background",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_active_text",
+      "label": "Active text",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "wood_button_active_border",
+      "label": "Active border",
+      "default": "#121212"
+    },
+    {
+      "type": "header",
+      "content": "Color swatch step"
+    },
+    {
+      "type": "text",
+      "id": "color_label",
+      "label": "Color label",
+      "default": "Select color"
+    },
+    {
+      "type": "range",
+      "id": "swatch_size",
+      "min": 50,
+      "max": 120,
+      "step": 5,
+      "unit": "px",
+      "label": "Swatch size",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "swatch_radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Swatch border radius",
+      "default": 4
+    },
+    {
+      "type": "color",
+      "id": "swatch_border",
+      "label": "Swatch border",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "range",
+      "id": "swatch_border_width",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "label": "Swatch border width",
+      "default": 2
+    },
+    {
+      "type": "color",
+      "id": "swatch_hover_border",
+      "label": "Hover border",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "swatch_active_border",
+      "label": "Active border",
+      "default": "#121212"
+    },
+    {
+      "type": "range",
+      "id": "swatch_active_border_width",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "label": "Active border width",
+      "default": 3
+    },
+    {
+      "type": "color",
+      "id": "swatch_checkmark_bg",
+      "label": "Checkmark background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "swatch_checkmark_color",
+      "label": "Checkmark color",
+      "default": "#121212"
+    },
+    {
+      "type": "range",
+      "id": "swatch_name_font_size",
+      "min": 11,
+      "max": 16,
+      "step": 1,
+      "unit": "px",
+      "label": "Color name font size",
+      "default": 13
+    },
+    {
+      "type": "color",
+      "id": "swatch_name_color",
+      "label": "Color name text",
+      "default": "#121212"
+    },
+    {
+      "type": "header",
+      "content": "Labels"
+    },
+    {
+      "type": "range",
+      "id": "label_font_size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Label font size",
+      "default": 14
+    },
+    {
+      "type": "color",
+      "id": "label_color",
+      "label": "Label color",
+      "default": "#121212"
+    },
+    {
+      "type": "select",
+      "id": "label_text_transform",
+      "label": "Label text transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "capitalize",
+          "label": "Capitalize"
+        }
+      ],
+      "default": "uppercase"
+    },
+    {
+      "type": "header",
+      "content": "Selection message"
+    },
+    {
+      "type": "text",
+      "id": "selection_message",
+      "label": "Message text",
+      "default": "Select a wood type and color to continue"
+    },
+    {
+      "type": "range",
+      "id": "message_font_size",
+      "min": 12,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "label": "Message font size",
+      "default": 14
+    },
+    {
+      "type": "color",
+      "id": "message_bg",
+      "label": "Message background",
+      "default": "#F3F3F3"
+    },
+    {
+      "type": "color",
+      "id": "message_text",
+      "label": "Message text",
+      "default": "#121212"
+    },
+    {
+      "type": "range",
+      "id": "message_radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "label": "Message border radius",
+      "default": 4
+    }
+  ],
+  "presets": [
+    {
+      "name": "Two-step variant selector"
+    }
+  ]
+}
 {% endschema %}
