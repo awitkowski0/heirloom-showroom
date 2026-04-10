@@ -9,64 +9,6 @@
  */
 {
   "sections": {
-    "showroom_ihnGTX": {
-      "type": "showroom",
-      "blocks": {
-        "hotspot_eaexgg": {
-          "type": "hotspot",
-          "settings": {
-            "heading": "Image banner",
-            "heading_size": "h2"
-          }
-        },
-        "hotspot_WJfdj3": {
-          "type": "hotspot",
-          "settings": {
-            "product": "mission-style",
-            "label": "Mission Dresser",
-            "position_x": 82,
-            "position_y": 57
-          }
-        },
-        "hotspot_fLfATP": {
-          "type": "hotspot",
-          "settings": {
-            "product": "crib-test",
-            "label": "Rug",
-            "position_x": 50,
-            "position_y": 78
-          }
-        },
-        "hotspot_TzraYV": {
-          "type": "hotspot",
-          "settings": {
-            "product": "crib-test",
-            "label": "Bedside Table",
-            "position_x": 28,
-            "position_y": 50
-          }
-        }
-      },
-      "block_order": [
-        "hotspot_eaexgg",
-        "hotspot_WJfdj3",
-        "hotspot_fLfATP",
-        "hotspot_TzraYV"
-      ],
-      "disabled": true,
-      "settings": {
-        "image_overlay_opacity": 50,
-        "image_height": "small",
-        "image_behavior": "none",
-        "desktop_content_position": "bottom-left",
-        "desktop_content_alignment": "center",
-        "show_text_box": false,
-        "color_scheme": "scheme-3",
-        "stack_images_on_mobile": false,
-        "mobile_content_alignment": "center",
-        "show_text_below": false
-      }
-    },
     "rich_text": {
       "type": "rich-text",
       "blocks": {
@@ -180,6 +122,73 @@
         "padding_bottom": 36
       }
     },
+    "showroom_ihnGTX": {
+      "type": "showroom",
+      "blocks": {
+        "hotspot_eaexgg": {
+          "type": "hotspot",
+          "settings": {
+            "product": "",
+            "label": "",
+            "position_x": 50,
+            "position_y": 50
+          }
+        },
+        "hotspot_4ddhDk": {
+          "type": "hotspot",
+          "settings": {
+            "product": "",
+            "label": "",
+            "position_x": 50,
+            "position_y": 50
+          }
+        },
+        "hotspot_WJfdj3": {
+          "type": "hotspot",
+          "settings": {
+            "product": "mission-style",
+            "label": "Mission Dresser",
+            "position_x": 17,
+            "position_y": 55
+          }
+        },
+        "hotspot_fLfATP": {
+          "type": "hotspot",
+          "settings": {
+            "product": "crib-test",
+            "label": "Rug",
+            "position_x": 50,
+            "position_y": 78
+          }
+        },
+        "hotspot_TzraYV": {
+          "type": "hotspot",
+          "settings": {
+            "product": "crib-test",
+            "label": "Bedside Table",
+            "position_x": 28,
+            "position_y": 50
+          }
+        }
+      },
+      "block_order": [
+        "hotspot_eaexgg",
+        "hotspot_4ddhDk",
+        "hotspot_WJfdj3",
+        "hotspot_fLfATP",
+        "hotspot_TzraYV"
+      ],
+      "settings": {
+        "room_image": "shopify://shop_images/FQP701_MoyertonToddlerBed_edited.jpg",
+        "heading": "",
+        "heading_alignment": "center",
+        "enable_parallax": true,
+        "parallax_intensity": 20,
+        "color_scheme": "scheme-1",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
     "multicolumn": {
       "type": "multicolumn",
       "blocks": {
@@ -270,11 +279,11 @@
     }
   },
   "order": [
-    "showroom_ihnGTX",
     "rich_text",
     "featured_collection",
     "collage",
     "video",
+    "showroom_ihnGTX",
     "multicolumn",
     "177574528203b9cca5"
   ]
