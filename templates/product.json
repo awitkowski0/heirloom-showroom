@@ -12,6 +12,15 @@
     "main": {
       "type": "main-product",
       "blocks": {
+        "collapsible_tab_HbcGbR": {
+          "type": "collapsible_tab",
+          "settings": {
+            "heading": "Collapsible row",
+            "icon": "check_mark",
+            "content": "",
+            "page": ""
+          }
+        },
         "vendor": {
           "type": "text",
           "settings": {
@@ -62,7 +71,7 @@
             "heading": "Materials",
             "icon": "leather",
             "content": "",
-            "page": ""
+            "page": "{{ product.metafields.custom.fpq_materials_information.value }}"
           }
         },
         "collapsible-row-1": {
@@ -100,6 +109,7 @@
         }
       },
       "block_order": [
+        "collapsible_tab_HbcGbR",
         "vendor",
         "title",
         "caption",

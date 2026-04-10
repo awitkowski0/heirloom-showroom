@@ -1,0 +1,547 @@
+{% doc %}
+  @prompt
+    Create a collapsible color swatch selector for a Shopify product page that works with a metaobject-based color system. The selector should:- Read the vendor of the current product (product.vendor) to determine which metafield to use: if vendor is "OCS" use variant metafield `custom.ocs_color_options`, if vendor is "PCL" use `custom.color_option_pcl`- Each variant has a single metaobject reference from the `color_option` metaobject definition, which has fields: `color_name` (single_line_text_field), `hex_value` (color), `swatch_image` (file_reference), `vendor` (single_line_text_field)- Display swatches as clickable swatch images (use `swatch_image` as primary, fall back to `hex_value` as a colored circle if no image)- Group swatches by the variant's wood type option (Option1) — each wood type group is collapsible/expandable with a toggle, collapsed by default- Only one color can be selected at a time across the entire product (max one selection)- When a swatch is selected, it should update the active variant selection accordingly- Selected swatch should have a visible active state (border or checkmark)- The component should replace or sit alongside the existing color variant dropdown on the product page- Use clean, minimal styling consistent with a premium furniture brand
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% liquid
+  assign metafield_key = 'custom.ocs_color_options'
+  if product.vendor == 'PCL'
+    assign metafield_key = 'custom.color_option_pcl'
+  endif
+
+  assign wood_groups = '' | split: ''
+  assign wood_group_names = '' | split: ''
+
+  for variant in product.variants
+    assign wood_type = variant.option1
+    unless wood_group_names contains wood_type
+      assign wood_group_names = wood_group_names | append: wood_type | split: '|||'
+    endunless
+  endfor
+%}
+
+{% style %}
+  .ai-color-swatch-selector-{{ ai_gen_id }} {
+    display: block;
+    width: 100%;
+    margin: {{ block.settings.top_margin }}px 0;
+  }
+
+  .ai-color-swatch-selector__header-{{ ai_gen_id }} {
+    margin-bottom: 12px;
+  }
+
+  .ai-color-swatch-selector__label-{{ ai_gen_id }} {
+    font-size: {{ block.settings.label_font_size }}px;
+    font-weight: 500;
+    color: {{ block.settings.label_color }};
+    margin: 0;
+  }
+
+  .ai-color-swatch-selector__wood-group-{{ ai_gen_id }} {
+    border: 1px solid {{ block.settings.group_border_color }};
+    border-radius: {{ block.settings.group_border_radius }}px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .ai-color-swatch-selector__wood-toggle-{{ ai_gen_id }} {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: {{ block.settings.toggle_bg_color }};
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .ai-color-swatch-selector__wood-toggle-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.toggle_hover_bg_color }};
+  }
+
+  .ai-color-swatch-selector__wood-name-{{ ai_gen_id }} {
+    font-size: 14px;
+    font-weight: 500;
+    color: {{ block.settings.toggle_text_color }};
+    text-align: left;
+  }
+
+  .ai-color-swatch-selector__toggle-icon-{{ ai_gen_id }} {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+    color: {{ block.settings.toggle_text_color }};
+  }
+
+  .ai-color-swatch-selector__wood-toggle-{{ ai_gen_id }}[aria-expanded="true"] .ai-color-swatch-selector__toggle-icon-{{ ai_gen_id }} {
+    transform: rotate(180deg);
+  }
+
+  .ai-color-swatch-selector__swatches-container-{{ ai_gen_id }} {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .ai-color-swatch-selector__swatches-container-{{ ai_gen_id }}.active {
+    max-height: 1000px;
+  }
+
+  .ai-color-swatch-selector__swatches-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax({{ block.settings.swatch_size }}px, 1fr));
+    gap: {{ block.settings.swatch_gap }}px;
+    padding: 16px;
+    background-color: {{ block.settings.swatches_bg_color }};
+  }
+
+  .ai-color-swatch-selector__swatch-{{ ai_gen_id }} {
+    position: relative;
+    width: {{ block.settings.swatch_size }}px;
+    height: {{ block.settings.swatch_size }}px;
+    border: 2px solid {{ block.settings.swatch_border_color }};
+    border-radius: {{ block.settings.swatch_border_radius }}px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    background-color: #f5f5f5;
+  }
+
+  .ai-color-swatch-selector__swatch-{{ ai_gen_id }}:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .ai-color-swatch-selector__swatch-{{ ai_gen_id }}.selected {
+    border-color: {{ block.settings.selected_border_color }};
+    border-width: 3px;
+  }
+
+  .ai-color-swatch-selector__swatch-image-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ai-color-swatch-selector__swatch-color-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ai-color-swatch-selector__checkmark-{{ ai_gen_id }} {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background-color: {{ block.settings.checkmark_bg_color }};
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-color-swatch-selector__swatch-{{ ai_gen_id }}.selected .ai-color-swatch-selector__checkmark-{{ ai_gen_id }} {
+    display: flex;
+  }
+
+  .ai-color-swatch-selector__checkmark-icon-{{ ai_gen_id }} {
+    width: 12px;
+    height: 12px;
+    color: {{ block.settings.checkmark_color }};
+  }
+
+  .ai-color-swatch-selector__swatch-tooltip-{{ ai_gen_id }} {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+
+  .ai-color-swatch-selector__swatch-{{ ai_gen_id }}:hover .ai-color-swatch-selector__swatch-tooltip-{{ ai_gen_id }} {
+    opacity: 1;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-color-swatch-selector__swatches-{{ ai_gen_id }} {
+      grid-template-columns: repeat(auto-fill, minmax({{ block.settings.swatch_size | times: 0.8 }}px, 1fr));
+    }
+
+    .ai-color-swatch-selector__swatch-{{ ai_gen_id }} {
+      width: {{ block.settings.swatch_size | times: 0.8 }}px;
+      height: {{ block.settings.swatch_size | times: 0.8 }}px;
+    }
+  }
+{% endstyle %}
+
+<color-swatch-selector-{{ ai_gen_id }}
+  class="ai-color-swatch-selector-{{ ai_gen_id }}"
+  data-product-id="{{ product.id }}"
+  data-metafield-key="{{ metafield_key }}"
+  {{ block.shopify_attributes }}
+>
+  {% if block.settings.show_label %}
+    <div class="ai-color-swatch-selector__header-{{ ai_gen_id }}">
+      <h3 class="ai-color-swatch-selector__label-{{ ai_gen_id }}">{{ block.settings.label_text }}</h3>
+    </div>
+  {% endif %}
+
+  {% for wood_type in wood_group_names %}
+    <div class="ai-color-swatch-selector__wood-group-{{ ai_gen_id }}" data-wood-type="{{ wood_type }}">
+      <button
+        type="button"
+        class="ai-color-swatch-selector__wood-toggle-{{ ai_gen_id }}"
+        aria-expanded="false"
+        aria-controls="ai-color-swatches-{{ ai_gen_id }}-{{ wood_type | handleize }}"
+      >
+        <span class="ai-color-swatch-selector__wood-name-{{ ai_gen_id }}">{{ wood_type }}</span>
+        <svg class="ai-color-swatch-selector__toggle-icon-{{ ai_gen_id }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <div
+        id="ai-color-swatches-{{ ai_gen_id }}-{{ wood_type | handleize }}"
+        class="ai-color-swatch-selector__swatches-container-{{ ai_gen_id }}"
+      >
+        <div class="ai-color-swatch-selector__swatches-{{ ai_gen_id }}">
+          {% for variant in product.variants %}
+            {% if variant.option1 == wood_type %}
+              {% liquid
+                assign color_metaobject = variant.metafields[metafield_key]
+                if color_metaobject == blank
+                  continue
+                endif
+
+                assign color_name = color_metaobject.color_name
+                assign hex_value = color_metaobject.hex_value
+                assign swatch_image = color_metaobject.swatch_image
+              %}
+
+              <div
+                class="ai-color-swatch-selector__swatch-{{ ai_gen_id }}"
+                data-variant-id="{{ variant.id }}"
+                role="button"
+                tabindex="0"
+                aria-label="Select {{ color_name }} for {{ wood_type }}"
+              >
+                {% if swatch_image %}
+                  <img
+                    src="{{ swatch_image | image_url: width: 100 }}"
+                    alt="{{ color_name }}"
+                    class="ai-color-swatch-selector__swatch-image-{{ ai_gen_id }}"
+                    loading="lazy"
+                  >
+                {% elsif hex_value %}
+                  <div
+                    class="ai-color-swatch-selector__swatch-color-{{ ai_gen_id }}"
+                    style="background-color: {{ hex_value }};"
+                  ></div>
+                {% endif %}
+
+                <div class="ai-color-swatch-selector__checkmark-{{ ai_gen_id }}">
+                  <svg class="ai-color-swatch-selector__checkmark-icon-{{ ai_gen_id }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+
+                {% if color_name %}
+                  <div class="ai-color-swatch-selector__swatch-tooltip-{{ ai_gen_id }}">
+                    {{ color_name }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</color-swatch-selector-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class ColorSwatchSelector{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.toggleButtons = this.querySelectorAll('.ai-color-swatch-selector__wood-toggle-{{ ai_gen_id }}');
+        this.swatches = this.querySelectorAll('.ai-color-swatch-selector__swatch-{{ ai_gen_id }}');
+        this.selectedVariantId = null;
+      }
+
+      connectedCallback() {
+        this.setupToggleListeners();
+        this.setupSwatchListeners();
+        this.syncWithCurrentVariant();
+      }
+
+      setupToggleListeners() {
+        this.toggleButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            const targetId = button.getAttribute('aria-controls');
+            const container = document.getElementById(targetId);
+
+            button.setAttribute('aria-expanded', !isExpanded);
+            container.classList.toggle('active');
+          });
+        });
+      }
+
+      setupSwatchListeners() {
+        this.swatches.forEach((swatch) => {
+          swatch.addEventListener('click', () => {
+            this.selectSwatch(swatch);
+          });
+
+          swatch.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              this.selectSwatch(swatch);
+            }
+          });
+        });
+      }
+
+      selectSwatch(swatch) {
+        const variantId = swatch.getAttribute('data-variant-id');
+
+        this.swatches.forEach((s) => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+
+        this.selectedVariantId = variantId;
+        this.updateProductVariant(variantId);
+      }
+
+      updateProductVariant(variantId) {
+        const variantIdInput = document.querySelector('input[name="id"]');
+        if (variantIdInput) {
+          variantIdInput.value = variantId;
+          variantIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('variant', variantId);
+        window.history.replaceState({}, '', url);
+
+        const variantChangeEvent = new CustomEvent('variant:change', {
+          detail: { variantId: variantId },
+          bubbles: true
+        });
+        document.dispatchEvent(variantChangeEvent);
+      }
+
+      syncWithCurrentVariant() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlVariantId = urlParams.get('variant');
+
+        const variantIdInput = document.querySelector('input[name="id"]');
+        const currentVariantId = urlVariantId || (variantIdInput ? variantIdInput.value : null);
+
+        if (currentVariantId) {
+          const matchingSwatch = Array.from(this.swatches).find(
+            (swatch) => swatch.getAttribute('data-variant-id') === currentVariantId
+          );
+
+          if (matchingSwatch) {
+            matchingSwatch.classList.add('selected');
+            this.selectedVariantId = currentVariantId;
+
+            const woodGroup = matchingSwatch.closest('.ai-color-swatch-selector__wood-group-{{ ai_gen_id }}');
+            if (woodGroup) {
+              const toggle = woodGroup.querySelector('.ai-color-swatch-selector__wood-toggle-{{ ai_gen_id }}');
+              const container = woodGroup.querySelector('.ai-color-swatch-selector__swatches-container-{{ ai_gen_id }}');
+              if (toggle && container) {
+                toggle.setAttribute('aria-expanded', 'true');
+                container.classList.add('active');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    customElements.define('color-swatch-selector-{{ ai_gen_id }}', ColorSwatchSelector{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Color swatch selector",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Label"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_label",
+      "label": "Show label",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "label_text",
+      "label": "Label text",
+      "default": "Select color"
+    },
+    {
+      "type": "range",
+      "id": "label_font_size",
+      "label": "Label font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "color",
+      "id": "label_color",
+      "label": "Label color",
+      "default": "#121212"
+    },
+    {
+      "type": "header",
+      "content": "Wood type groups"
+    },
+    {
+      "type": "color",
+      "id": "group_border_color",
+      "label": "Border color",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "range",
+      "id": "group_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 16,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "color",
+      "id": "toggle_bg_color",
+      "label": "Toggle background",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "toggle_hover_bg_color",
+      "label": "Toggle hover background",
+      "default": "#f0f0f0"
+    },
+    {
+      "type": "color",
+      "id": "toggle_text_color",
+      "label": "Toggle text color",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "swatches_bg_color",
+      "label": "Swatches background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Swatches"
+    },
+    {
+      "type": "range",
+      "id": "swatch_size",
+      "label": "Swatch size",
+      "min": 40,
+      "max": 80,
+      "step": 5,
+      "unit": "px",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "swatch_gap",
+      "label": "Gap between swatches",
+      "min": 4,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "swatch_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "color",
+      "id": "swatch_border_color",
+      "label": "Border color",
+      "default": "#d0d0d0"
+    },
+    {
+      "type": "color",
+      "id": "selected_border_color",
+      "label": "Selected border color",
+      "default": "#121212"
+    },
+    {
+      "type": "header",
+      "content": "Selection indicator"
+    },
+    {
+      "type": "color",
+      "id": "checkmark_bg_color",
+      "label": "Checkmark background",
+      "default": "#121212"
+    },
+    {
+      "type": "color",
+      "id": "checkmark_color",
+      "label": "Checkmark color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "range",
+      "id": "top_margin",
+      "label": "Top margin",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 16
+    }
+  ],
+  "presets": [
+  {
+    "name": "Color swatch selector",
+    "category": "Product"
+  }
+]
+}
+{% endschema %}

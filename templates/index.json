@@ -15,10 +15,8 @@
         "hotspot_eaexgg": {
           "type": "hotspot",
           "settings": {
-            "product": "mission-style",
-            "label": "Mission Crib",
-            "position_x": 49,
-            "position_y": 50
+            "heading": "Image banner",
+            "heading_size": "h2"
           }
         },
         "hotspot_WJfdj3": {
@@ -55,15 +53,18 @@
         "hotspot_fLfATP",
         "hotspot_TzraYV"
       ],
-      "name": "Showroom",
+      "disabled": true,
       "settings": {
-        "heading": "",
-        "heading_alignment": "center",
-        "enable_parallax": true,
-        "parallax_intensity": 50,
-        "color_scheme": "",
-        "padding_top": 0,
-        "padding_bottom": 0
+        "image_overlay_opacity": 50,
+        "image_height": "small",
+        "image_behavior": "none",
+        "desktop_content_position": "bottom-left",
+        "desktop_content_alignment": "center",
+        "show_text_box": false,
+        "color_scheme": "scheme-3",
+        "stack_images_on_mobile": false,
+        "mobile_content_alignment": "center",
+        "show_text_below": false
       }
     },
     "rich_text": {
@@ -117,7 +118,7 @@
         "show_secondary_image": true,
         "show_vendor": false,
         "show_rating": false,
-        "quick_add": "none",
+        "quick_add": "standard",
         "columns_mobile": "2",
         "swipe_on_mobile": false,
         "padding_top": 28,
@@ -152,6 +153,7 @@
         "product",
         "collection-1"
       ],
+      "disabled": true,
       "settings": {
         "heading": "Multimedia collage",
         "heading_size": "h2",
@@ -165,6 +167,7 @@
     },
     "video": {
       "type": "video",
+      "disabled": true,
       "settings": {
         "heading": "",
         "heading_size": "h1",
@@ -213,6 +216,7 @@
         "column2",
         "column3"
       ],
+      "disabled": true,
       "settings": {
         "title": "",
         "heading_size": "h1",
@@ -230,37 +234,38 @@
         "padding_bottom": 36
       }
     },
-    "1775657524acfeeacd": {
+    "177574528203b9cca5": {
       "type": "_blocks",
       "blocks": {
-        "ai_gen_block_6e4eab5_QHXFfR": {
-          "type": "ai_gen_block_6e4eab5",
+        "ai_gen_block_20c39b2_zy3qQQ": {
+          "type": "ai_gen_block_20c39b2",
           "settings": {
-            "show_hero_label": true,
-            "hero_label": "Product Gallery",
-            "hero_image_count": 6,
-            "hero_columns": 3,
-            "hero_columns_mobile": "2",
-            "show_variant_label": true,
-            "variant_label": "Color & Stain Options",
-            "wood_option_position": "1",
-            "variant_columns": 4,
-            "variant_columns_mobile": "2",
-            "desktop_width_percent": 100,
-            "image_gap": 8,
-            "section_spacing": 30,
-            "image_border_radius": 0,
-            "image_background": "#f6f3ee",
-            "label_color": "#442a22",
+            "show_label": true,
+            "label_text": "Select color",
             "label_font_size": 16,
-            "label_spacing": 15
+            "label_color": "#121212",
+            "group_border_color": "#e0e0e0",
+            "group_border_radius": 4,
+            "toggle_bg_color": "#f9f9f9",
+            "toggle_hover_bg_color": "#f0f0f0",
+            "toggle_text_color": "#121212",
+            "swatches_bg_color": "#ffffff",
+            "swatch_size": 60,
+            "swatch_gap": 12,
+            "swatch_border_radius": 4,
+            "swatch_border_color": "#d0d0d0",
+            "selected_border_color": "#121212",
+            "checkmark_bg_color": "#121212",
+            "checkmark_color": "#ffffff",
+            "top_margin": 16
           },
           "blocks": {}
         }
       },
       "block_order": [
-        "ai_gen_block_6e4eab5_QHXFfR"
+        "ai_gen_block_20c39b2_zy3qQQ"
       ],
+      "disabled": true,
       "settings": {}
     }
   },
@@ -271,6 +276,6 @@
     "collage",
     "video",
     "multicolumn",
-    "1775657524acfeeacd"
+    "177574528203b9cca5"
   ]
 }
