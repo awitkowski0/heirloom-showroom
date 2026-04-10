@@ -70,7 +70,7 @@
           "settings": {
             "heading": "Materials",
             "icon": "leather",
-            "content": "",
+            "content": "{{ block.settings.page.metafields.custom.fqp_materials_information | metafield_tag }}",
             "page": ""
           }
         },
