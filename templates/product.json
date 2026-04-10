@@ -71,7 +71,7 @@
             "heading": "Materials",
             "icon": "leather",
             "content": "",
-            "page": ""
+            "page": "{{ product.metafields.custom.fpq_materials_information.value }}"
           }
         },
         "collapsible-row-1": {
