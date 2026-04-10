@@ -1,0 +1,484 @@
+{% doc %}
+  @prompt
+    Create a product page customization that controls how variant images appear in the media gallery. The goal is: 1) Show only non-variant "hero" images in the main product gallery by default (images not assigned to any specific variant). 2) When a customer selects a Wood Type option (the first option), dynamically show only the color/stain variant images for that selected wood type in a secondary image gallery or replace the main gallery images. 3) The color swatch images are named with a pattern like FQP_OCS_[color-code]_[Wood-Type] and are assigned to variants. 4) The product has two options: Wood Options (Red Oak, Hard Maple, Cherry) and Stain and color options. When a wood type is selected, filter and display only the variant images matching that wood type selection, hiding all other variant images. Hero images (positions 1-6, not assigned to variants) should always remain visible at the top of the gallery.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-variant-gallery-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+  }
+
+  .ai-variant-gallery__hero-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: repeat({{ block.settings.hero_columns }}, 1fr);
+    gap: {{ block.settings.image_gap }}px;
+    margin-bottom: {{ block.settings.section_spacing }}px;
+  }
+
+  .ai-variant-gallery__variant-images-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: repeat({{ block.settings.variant_columns }}, 1fr);
+    gap: {{ block.settings.image_gap }}px;
+  }
+
+  .ai-variant-gallery__image-wrapper-{{ ai_gen_id }} {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: {{ block.settings.image_border_radius }}px;
+    background-color: {{ block.settings.image_background }};
+  }
+
+  .ai-variant-gallery__image-{{ ai_gen_id }} {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .ai-variant-gallery__image-wrapper-{{ ai_gen_id }}:hover .ai-variant-gallery__image-{{ ai_gen_id }} {
+    transform: scale(1.05);
+  }
+
+  .ai-variant-gallery__variant-item-{{ ai_gen_id }} {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+  }
+
+  .ai-variant-gallery__variant-item-{{ ai_gen_id }}.active {
+    opacity: 1;
+    max-height: 1000px;
+  }
+
+  .ai-variant-gallery__label-{{ ai_gen_id }} {
+    font-size: {{ block.settings.label_font_size }}px;
+    color: {{ block.settings.label_color }};
+    margin-bottom: {{ block.settings.label_spacing }}px;
+    font-weight: 600;
+  }
+
+  .ai-variant-gallery__empty-state-{{ ai_gen_id }} {
+    padding: 40px 20px;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    border-radius: {{ block.settings.image_border_radius }}px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-variant-gallery__hero-{{ ai_gen_id }} {
+      grid-template-columns: repeat({{ block.settings.hero_columns_mobile }}, 1fr);
+    }
+
+    .ai-variant-gallery__variant-images-{{ ai_gen_id }} {
+      grid-template-columns: repeat({{ block.settings.variant_columns_mobile }}, 1fr);
+    }
+  }
+{% endstyle %}
+
+<variant-image-gallery-{{ ai_gen_id }}
+  class="ai-variant-gallery-{{ ai_gen_id }}"
+  data-hero-count="{{ block.settings.hero_image_count }}"
+  data-wood-option-position="{{ block.settings.wood_option_position }}"
+  {{ block.shopify_attributes }}
+>
+  {% if product %}
+    {% if block.settings.show_hero_label and product.media.size > 0 %}
+      <div class="ai-variant-gallery__label-{{ ai_gen_id }}">
+        {{ block.settings.hero_label }}
+      </div>
+    {% endif %}
+
+    <div class="ai-variant-gallery__hero-{{ ai_gen_id }}">
+      {% assign hero_count = block.settings.hero_image_count %}
+      {% assign displayed_hero = 0 %}
+      
+      {% for media in product.media %}
+        {% if displayed_hero >= hero_count %}
+          {% break %}
+        {% endif %}
+        
+        {% assign is_variant_image = false %}
+        {% for variant in product.variants %}
+          {% if variant.featured_media.id == media.id %}
+            {% assign is_variant_image = true %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+        
+        {% unless is_variant_image %}
+          <div class="ai-variant-gallery__image-wrapper-{{ ai_gen_id }}">
+            {% if media.media_type == 'image' %}
+              <img
+                src="{{ media | image_url: width: 800 }}"
+                alt="{{ media.alt | escape }}"
+                loading="lazy"
+                width="{{ media.width }}"
+                height="{{ media.height }}"
+                class="ai-variant-gallery__image-{{ ai_gen_id }}"
+              >
+            {% endif %}
+          </div>
+          {% assign displayed_hero = displayed_hero | plus: 1 %}
+        {% endunless %}
+      {% endfor %}
+      
+      {% if displayed_hero == 0 %}
+        <div class="ai-variant-gallery__empty-state-{{ ai_gen_id }}">
+          Add hero images (not assigned to variants) to display here
+        </div>
+      {% endif %}
+    </div>
+
+    {% if block.settings.show_variant_label %}
+      <div class="ai-variant-gallery__label-{{ ai_gen_id }}">
+        {{ block.settings.variant_label }}
+      </div>
+    {% endif %}
+
+    <div class="ai-variant-gallery__variant-images-{{ ai_gen_id }}">
+      {% for variant in product.variants %}
+        {% if variant.featured_media %}
+          {% assign wood_option_value = '' %}
+          {% if block.settings.wood_option_position == 1 %}
+            {% assign wood_option_value = variant.option1 %}
+          {% elsif block.settings.wood_option_position == 2 %}
+            {% assign wood_option_value = variant.option2 %}
+          {% elsif block.settings.wood_option_position == 3 %}
+            {% assign wood_option_value = variant.option3 %}
+          {% endif %}
+          
+          <div
+            class="ai-variant-gallery__variant-item-{{ ai_gen_id }}"
+            data-wood-type="{{ wood_option_value | handleize }}"
+            data-variant-id="{{ variant.id }}"
+          >
+            <div class="ai-variant-gallery__image-wrapper-{{ ai_gen_id }}">
+              <img
+                src="{{ variant.featured_media | image_url: width: 600 }}"
+                alt="{{ variant.featured_media.alt | default: variant.title | escape }}"
+                loading="lazy"
+                width="{{ variant.featured_media.width }}"
+                height="{{ variant.featured_media.height }}"
+                class="ai-variant-gallery__image-{{ ai_gen_id }}"
+              >
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="ai-variant-gallery__empty-state-{{ ai_gen_id }}">
+      This block displays product variant images filtered by wood type selection. Add it to a product page to see it in action.
+    </div>
+  {% endif %}
+</variant-image-gallery-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class VariantImageGallery{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.heroCount = parseInt(this.dataset.heroCount) || 6;
+        this.woodOptionPosition = parseInt(this.dataset.woodOptionPosition) || 1;
+        this.variantItems = this.querySelectorAll('.ai-variant-gallery__variant-item-{{ ai_gen_id }}');
+      }
+
+      connectedCallback() {
+        this.setupVariantListener();
+        this.filterVariantImages();
+      }
+
+      setupVariantListener() {
+        const productForm = document.querySelector('product-form, form[action*="/cart/add"]');
+        
+        if (productForm) {
+          const variantSelects = productForm.querySelectorAll('select[name="id"], input[name="id"]');
+          const optionInputs = productForm.querySelectorAll('input[name^="options"], select[name^="options"]');
+          
+          variantSelects.forEach(select => {
+            select.addEventListener('change', () => {
+              setTimeout(() => this.filterVariantImages(), 100);
+            });
+          });
+          
+          optionInputs.forEach(input => {
+            input.addEventListener('change', () => {
+              setTimeout(() => this.filterVariantImages(), 100);
+            });
+          });
+        }
+
+        document.addEventListener('variant:change', () => {
+          this.filterVariantImages();
+        });
+      }
+
+      filterVariantImages() {
+        const selectedWoodType = this.getSelectedWoodType();
+        
+        if (!selectedWoodType) {
+          this.variantItems.forEach(item => {
+            item.classList.remove('active');
+          });
+          return;
+        }
+
+        const selectedWoodHandle = selectedWoodType.toLowerCase().replace(/\s+/g, '-');
+        
+        this.variantItems.forEach(item => {
+          const itemWoodType = item.dataset.woodType;
+          
+          if (itemWoodType === selectedWoodHandle) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+
+      getSelectedWoodType() {
+        const productForm = document.querySelector('product-form, form[action*="/cart/add"]');
+        
+        if (!productForm) {
+          return null;
+        }
+
+        const optionName = `options[${this.woodOptionPosition}]`;
+        const optionInput = productForm.querySelector(`select[name="${optionName}"], input[name="${optionName}"]:checked`);
+        
+        if (optionInput) {
+          return optionInput.value;
+        }
+
+        const variantIdInput = productForm.querySelector('select[name="id"], input[name="id"]:checked');
+        if (variantIdInput && variantIdInput.selectedOptions && variantIdInput.selectedOptions[0]) {
+          const selectedOption = variantIdInput.selectedOptions[0];
+          const optionText = selectedOption.textContent || selectedOption.innerText;
+          const optionParts = optionText.split('/').map(part => part.trim());
+          
+          if (optionParts.length >= this.woodOptionPosition) {
+            return optionParts[this.woodOptionPosition - 1];
+          }
+        }
+
+        return null;
+      }
+    }
+
+    customElements.define('variant-image-gallery-{{ ai_gen_id }}', VariantImageGallery{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Variant image gallery",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Hero images"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_hero_label",
+      "label": "Show hero label",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "hero_label",
+      "label": "Hero label",
+      "default": "Product Gallery"
+    },
+    {
+      "type": "range",
+      "id": "hero_image_count",
+      "label": "Number of hero images",
+      "min": 1,
+      "max": 12,
+      "step": 1,
+      "default": 6
+    },
+    {
+      "type": "range",
+      "id": "hero_columns",
+      "label": "Hero columns (desktop)",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "select",
+      "id": "hero_columns_mobile",
+      "label": "Hero columns (mobile)",
+      "options": [
+        {
+          "value": "1",
+          "label": "1"
+        },
+        {
+          "value": "2",
+          "label": "2"
+        }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "header",
+      "content": "Variant images"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_variant_label",
+      "label": "Show variant label",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "variant_label",
+      "label": "Variant label",
+      "default": "Color & Stain Options"
+    },
+    {
+      "type": "select",
+      "id": "wood_option_position",
+      "label": "Wood type option position",
+      "info": "Select which product option controls wood type filtering",
+      "options": [
+        {
+          "value": "1",
+          "label": "Option 1"
+        },
+        {
+          "value": "2",
+          "label": "Option 2"
+        },
+        {
+          "value": "3",
+          "label": "Option 3"
+        }
+      ],
+      "default": "1"
+    },
+    {
+      "type": "range",
+      "id": "variant_columns",
+      "label": "Variant columns (desktop)",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "variant_columns_mobile",
+      "label": "Variant columns (mobile)",
+      "options": [
+        {
+          "value": "2",
+          "label": "2"
+        },
+        {
+          "value": "3",
+          "label": "3"
+        }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "image_gap",
+      "label": "Gap between images",
+      "min": 4,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "section_spacing",
+      "label": "Space between sections",
+      "min": 10,
+      "max": 60,
+      "step": 5,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "image_border_radius",
+      "label": "Image border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "color",
+      "id": "image_background",
+      "label": "Image background",
+      "default": "#f6f3ee"
+    },
+    {
+      "type": "color",
+      "id": "label_color",
+      "label": "Label color",
+      "default": "#442a22"
+    },
+    {
+      "type": "range",
+      "id": "label_font_size",
+      "label": "Label font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "label_spacing",
+      "label": "Label spacing",
+      "min": 5,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "default": 15
+    }
+  ],
+  "presets": [
+    {
+      "name": "Variant image gallery"
+    }
+  ]
+}
+{% endschema %}

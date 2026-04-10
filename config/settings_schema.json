@@ -1,9 +1,9 @@
 [
   {
     "name": "theme_info",
-    "theme_name": "Dawn",
-    "theme_version": "15.4.1",
-    "theme_author": "Shopify",
+    "theme_name": "Modern Artisan",
+    "theme_version": "1.0.0",
+    "theme_author": "Heirloom",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
     "theme_support_url": "https://support.shopify.com/"
   },
@@ -111,7 +111,7 @@
       {
         "type": "font_picker",
         "id": "type_header_font",
-        "default": "assistant_n4",
+        "default": "noto_serif_n4",
         "label": "t:settings_schema.typography.settings.type_header_font.label"
       },
       {
@@ -131,7 +131,7 @@
       {
         "type": "font_picker",
         "id": "type_body_font",
-        "default": "assistant_n4",
+        "default": "manrope_n4",
         "label": "t:settings_schema.typography.settings.type_body_font.label"
       },
       {
@@ -266,7 +266,7 @@
         "step": 2,
         "unit": "px",
         "label": "t:settings_schema.global.settings.corner_radius.label",
-        "default": 0
+        "default": 2
       },
       {
         "type": "header",

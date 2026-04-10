@@ -153,6 +153,18 @@
                         {{ 'image' | placeholder_svg_tag: 'placeholder-svg placeholder' }}
                       {%- endif -%}
                     </div>
+                  {%- when 'policies' -%}
+                    <ul class="footer-block__details-content list-unstyled">
+                      {%- for policy in shop.policies -%}
+                        {%- if policy != blank -%}
+                          <li>
+                            <a href="{{ policy.url }}" class="link link--text list-menu__item list-menu__item--link">
+                              {{ policy.title | escape }}
+                            </a>
+                          </li>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </ul>
                 {%- endcase -%}
               </div>
             {%- endfor -%}
@@ -343,6 +355,18 @@
           "id": "menu",
           "default": "footer",
           "label": "t:sections.footer.blocks.link_list.settings.menu.label"
+        }
+      ]
+    },
+    {
+      "type": "policies",
+      "name": "Policies",
+      "settings": [
+        {
+          "type": "inline_richtext",
+          "id": "heading",
+          "default": "Legal",
+          "label": "Heading"
         }
       ]
     },
