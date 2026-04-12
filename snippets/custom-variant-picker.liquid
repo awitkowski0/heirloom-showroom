@@ -1,21 +1,49 @@
 {% comment %}
-  Custom Variant Picker with images and price modifiers
+  Custom Variant Picker - Uses actual Shopify variant images
+  
+  Images are automatically pulled from each variant's featured image
+  No metafields needed - just set variant images in Shopify admin
+  Shows pill style when no image available
   
   Usage:
   {% render 'custom-variant-picker', product: product, block: block, product_form_id: product_form_id %}
-  
-  Metafields expected on each option value:
-  - custom.variant_image: Image for the variant (applied when this option is selected)
-  - custom.price_modifier: Number (positive or negative) to add to base price
 {% endcomment %}
 
 {%- unless product.has_only_default_variant -%}
+  {%- assign variants_json = '' -%}
+  {%- for variant in product.variants -%}
+    {%- capture variant_json -%}
+    {
+      "id": {{ variant.id }},
+      "title": {{ variant.title | json }},
+      "price": {{ variant.price }},
+      "compare_at_price": {% if variant.compare_at_price %}{{ variant.compare_at_price }}{% else %}null{% endif %},
+      "featured_image": {% if variant.featured_image %}{{ variant.featured_image | image_url: width: 400 | json }}{% else %}null{% endif %},
+      "options": {{ variant.options | json }},
+      "available": {{ variant.available }}
+    }
+    {%- endcapture -%}
+    {%- if variants_json == '' -%}
+      {%- assign variants_json = variant_json -%}
+    {%- else -%}
+      {%- assign variants_json = variants_json | append: ',' | append: variant_json -%}
+    {%- endif -%}
+  {%- endfor -%}
+
   <div 
     class="custom-variant-picker" 
     id="CustomVariantPicker-{{ section.id }}"
     data-section-id="{{ section.id }}"
+    data-image-style="{{ block.settings.custom_image_style | default: 'image' }}"
     {{ block.shopify_attributes }}
   >
+    <script type="application/json" data-all-variants hidden>
+      [{{ variants_json }}]
+    </script>
+    <script type="application/json" data-base-price hidden>
+      {{ product.price | json }}
+    </script>
+
     {%- for option in product.options_with_values -%}
       <div class="custom-option" data-option-index="{{ forloop.index0 }}" data-option-name="{{ option.name }}">
         <label class="form__label">
@@ -28,60 +56,46 @@
         <div class="custom-option__values">
           {%- for value in option.values -%}
             {%- liquid
-              assign option_value = option.name | append: '::' | append: value
-              assign variant_image = nil
-              assign price_modifier = 0
+              assign is_available = false
+              assign option_image = nil
               
-              # Get metafields from the option value
-              # Option values in Shopify can have metafields attached
-              assign option_value_obj = null
-              for ov in product.options_with_values
-                if ov.name == option.name
-                  for v in ov.values
-                    if v == value
-                      assign option_value_obj = v
-                      break
-                    endif
-                  endfor
-                  break
+              # Find a variant with this option value that has an image and is available
+              for variant in product.variants
+                if variant.options[forloop.index0] == value
+                  if variant.available
+                    assign is_available = true
+                  endif
+                  if variant.featured_image != nil and option_image == nil
+                    assign option_image = variant.featured_image | image_url: width: 120
+                  endif
                 endif
               endfor
               
-              if option_value_obj != null
-                if option_value_obj.metafields.custom.variant_image != blank
-                  assign variant_image = option_value_obj.metafields.custom.variant_image
-                endif
-                if option_value_obj.metafields.custom.price_modifier != blank
-                  assign price_modifier = option_value_obj.metafields.custom.price_modifier | default: 0
-                endif
-              endif
-              
-              assign option_disabled = true
-              if value.available
-                assign option_disabled = false
+              assign has_image = false
+              if option_image != nil
+                assign has_image = true
               endif
             -%}
             
             <label 
-              class="custom-option__value {% if value.selected %}custom-option__value--selected{% endif %} {% if option_disabled %}custom-option__value--disabled{% endif %}"
+              class="custom-option__value {% if value.selected %}custom-option__value--selected{% endif %} {% unless is_available %}custom-option__value--disabled{% endunless %} {% if has_image %}custom-option__value--image{% else %}custom-option__value--pill{% endif %}"
               data-value="{{ value | escape }}"
               data-value-index="{{ forloop.index0 }}"
-              {% if variant_image != nil %}data-variant-image="{{ variant_image | image_url }}"{% endif %}
-              {% if price_modifier != 0 %}data-price-modifier="{{ price_modifier }}"{% endif %}
+              {% if option_image %}data-option-image="{{ option_image }}"{% endif %}
             >
               <input 
                 type="radio" 
-                name="Option-{{ section.id }}-{{ forloop.parentloop.index0 }}"
+                name="Option-{{ section.id }}-{{ forloop.index0 }}"
                 value="{{ value | escape }}"
                 {% if value.selected %}checked{% endif %}
-                {% if option_disabled %}disabled{% endif %}
+                {% unless is_available %}disabled{% endunless %}
                 class="visually-hidden"
               >
               
-              {% if variant_image != nil %}
+              {% if has_image %}
                 <span class="custom-option__image-wrapper">
                   <img 
-                    src="{{ variant_image | image_url: width: 80 }}" 
+                    src="{{ option_image }}" 
                     alt="{{ value }}"
                     class="custom-option__image"
                     loading="lazy"
@@ -91,133 +105,17 @@
               
               <span class="custom-option__label">
                 {{ value }}
-                {% if price_modifier != 0 %}
-                  <span class="custom-option__price-modifier">
-                    {% if price_modifier > 0 %}+{% endif %}{{ price_modifier | money }}
-                  </span>
-                {% endif %}
               </span>
               
-              {% if option_disabled %}
+              {% unless is_available %}
                 <span class="custom-option__unavailable visually-hidden">
                   {{- 'products.product.variant_sold_out_or_unavailable' | t -}}
                 </span>
-              {% endif %}
+              {% endunless %}
             </label>
           {%- endfor -%}
         </div>
       </div>
     {%- endfor -%}
-    
-    <script type="application/json" data-base-price>
-      {{ product.price | json }}
-    </script>
-    <script type="application/json" data-selected-variant>
-      {{ product.selected_or_first_available_variant | json }}
-    </script>
   </div>
-
-  <style>
-    .custom-variant-picker {
-      margin-bottom: 2rem;
-    }
-    
-    .custom-option {
-      margin-bottom: 1.5rem;
-    }
-    
-    .custom-option .form__label {
-      display: block;
-      margin-bottom: 0.8rem;
-      font-weight: 600;
-    }
-    
-    .custom-option__selected-value {
-      font-weight: 400;
-      color: rgba(var(--color-foreground), 0.75);
-    }
-    
-    .custom-option__values {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    
-    .custom-option__value {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem;
-      border: 0.1rem solid rgba(var(--color-foreground), 0.2);
-      border-radius: var(--variant-pills-radius);
-      cursor: pointer;
-      transition: all var(--duration-short) ease;
-      min-width: 100px;
-      background-color: rgb(var(--color-background));
-    }
-    
-    .custom-option__value:hover {
-      border-color: rgb(var(--color-foreground));
-    }
-    
-    .custom-option__value--selected {
-      border-color: rgb(var(--color-foreground));
-      background-color: rgb(var(--color-foreground));
-      color: rgb(var(--color-background));
-    }
-    
-    .custom-option__value--disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      text-decoration: line-through;
-    }
-    
-    .custom-option__image-wrapper {
-      width: 60px;
-      height: 60px;
-      margin-bottom: 0.5rem;
-      border-radius: 4px;
-      overflow: hidden;
-      background-color: rgb(var(--color-background));
-    }
-    
-    .custom-option__value--selected .custom-option__image-wrapper {
-      border: 2px solid rgb(var(--color-background));
-    }
-    
-    .custom-option__image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .custom-option__label {
-      font-size: 1.2rem;
-      text-align: center;
-    }
-    
-    .custom-option__price-modifier {
-      display: block;
-      font-size: 1rem;
-      opacity: 0.8;
-      margin-top: 0.2rem;
-    }
-    
-    @media screen and (max-width: 749px) {
-      .custom-option__values {
-        gap: 0.8rem;
-      }
-      
-      .custom-option__value {
-        min-width: 80px;
-        padding: 0.8rem;
-      }
-      
-      .custom-option__image-wrapper {
-        width: 50px;
-        height: 50px;
-      }
-    }
-  </style>
 {%- endunless -%}
