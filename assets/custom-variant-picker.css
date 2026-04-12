@@ -20,7 +20,7 @@
 .custom-option__values {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.6rem;
 }
 
 .custom-option__value {
@@ -28,13 +28,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem;
-  border: 0.1rem solid rgba(var(--color-foreground), 0.2);
+  justify-content: center;
   border-radius: var(--variant-pills-radius);
   cursor: pointer;
   transition: all var(--duration-short) ease;
-  min-width: 100px;
+  min-width: 70px;
+  flex: 1;
+  max-width: 100px;
   background-color: rgb(var(--color-background));
+  overflow: hidden;
 }
 
 .custom-option__value:hover {
@@ -48,54 +50,66 @@
 }
 
 .custom-option__value--disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   text-decoration: line-through;
 }
 
-.custom-option__image-wrapper {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
+/* Image variant style */
+.custom-option__value--image {
+  border: 0.1rem solid rgba(var(--color-foreground), 0.1);
+  padding: 0;
+}
+
+.custom-option__value--image .custom-option__image-wrapper {
+  width: 100%;
+  height: 80px;
   overflow: hidden;
-  background-color: rgb(var(--color-background));
 }
 
-.custom-option__value--selected .custom-option__image-wrapper {
-  border: 2px solid rgb(var(--color-background));
-}
-
-.custom-option__image {
+.custom-option__value--image .custom-option__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.custom-option__label {
-  font-size: 1.2rem;
-  text-align: center;
+.custom-option__value--image .custom-option__label {
+  padding: 0.4rem;
+  font-size: 0.9rem;
 }
 
-.custom-option__price-modifier {
-  display: block;
+/* Pill variant style */
+.custom-option__value--pill {
+  border: 0.1rem solid rgba(var(--color-foreground), 0.2);
+  padding: 0.6rem 1rem;
+}
+
+.custom-option__value--pill .custom-option__label {
   font-size: 1rem;
-  opacity: 0.8;
-  margin-top: 0.2rem;
+  padding: 0;
+}
+
+.custom-option__value--pill:hover {
+  border-color: rgb(var(--color-foreground));
+}
+
+.custom-option__value--pill.custom-option__value--selected {
+  border-color: rgb(var(--color-foreground));
+  background-color: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
 }
 
 @media screen and (max-width: 749px) {
   .custom-option__values {
-    gap: 0.8rem;
+    gap: 0.5rem;
   }
 
   .custom-option__value {
-    min-width: 80px;
-    padding: 0.8rem;
+    min-width: 60px;
+    max-width: 80px;
   }
 
-  .custom-option__image-wrapper {
-    width: 50px;
-    height: 50px;
+  .custom-option__value--image .custom-option__image-wrapper {
+    height: 60px;
   }
 }
