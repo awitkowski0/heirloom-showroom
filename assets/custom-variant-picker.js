@@ -1,22 +1,27 @@
 class CustomVariantPicker extends HTMLElement {
   constructor() {
     super();
-    this.basePrice = 0;
     this.selectedOptions = {};
-    this.productVariants = [];
+    this.variants = [];
     
     this.initialize();
   }
 
   initialize() {
-    // Get base price from JSON
-    const basePriceEl = this.querySelector('[data-base-price]');
-    if (basePriceEl) {
-      this.basePrice = parseFloat(basePriceEl.textContent) || 0;
+    // Get variants from JSON data in the HTML
+    const variantsEl = this.querySelector('[data-all-variants]');
+    if (variantsEl) {
+      try {
+        this.variants = JSON.parse(variantsEl.textContent);
+      } catch (e) {
+        console.error('Failed to parse variants:', e);
+        this.variants = [];
+      }
     }
 
-    // Get product variants from the product object in global context
-    this.productVariants = window.productVariants || [];
+    // Get base price
+    const basePriceEl = this.querySelector('[data-base-price]');
+    this.basePrice = basePriceEl ? parseFloat(basePriceEl.textContent) || 0 : 0;
     
     // Initialize selected options from current state
     this.querySelectorAll('.custom-option').forEach((optionEl, index) => {
@@ -61,22 +66,19 @@ class CustomVariantPicker extends HTMLElement {
   }
 
   updateVariant() {
-    // Build option names to values mapping
-    const optionNames = [];
+    // Build option values array matching the order in this.variants[0].options
     const optionValues = [];
     
     this.querySelectorAll('.custom-option').forEach((optionEl) => {
-      const optionName = optionEl.dataset.optionName;
       const optionIndex = optionEl.dataset.optionIndex;
-      optionNames.push(optionName);
       optionValues.push(this.selectedOptions[optionIndex] || '');
     });
 
     // Find matching variant
-    const matchingVariant = this.productVariants.find((variant) => {
-      if (!variant.options) return false;
+    const matchingVariant = this.variants.find((variant) => {
+      if (!variant.options || variant.options.length !== optionValues.length) return false;
       
-      for (let i = 0; i < optionNames.length; i++) {
+      for (let i = 0; i < optionValues.length; i++) {
         if (variant.options[i] !== optionValues[i]) {
           return false;
         }
@@ -96,69 +98,46 @@ class CustomVariantPicker extends HTMLElement {
         });
       }
 
-      // Update price display
-      this.updatePrice(matchingVariant);
-
       // Update main product form variant ID
       this.updateProductFormVariant(matchingVariant);
 
-      // Update URL if needed
+      // Update URL
       if (matchingVariant.url) {
-        // Could update URL here if desired
+        const url = new URL(window.location.href);
+        url.searchParams.set('variant', matchingVariant.id);
+        window.history.replaceState({}, '', url);
       }
     }
   }
 
-  updatePrice(variant) {
-    const priceEl = document.querySelector(`#price-${this.dataset.sectionId}`);
-    if (priceEl && variant.price) {
-      const priceHtml = this.formatPrice(variant.price, variant.compare_at_price);
-      priceEl.innerHTML = priceHtml;
-    }
-  }
-
-  formatPrice(price, compareAtPrice) {
-    const formattedPrice = this.formatMoney(price);
-    let html = `<span class="price-item price-item--regular">${formattedPrice}</span>`;
-    
-    if (compareAtPrice && compareAtPrice > price) {
-      const formattedCompareAt = this.formatMoney(compareAtPrice);
-      html += `<span class="price-item price-item--regular" style="text-decoration: line-through; opacity: 0.6;">${formattedCompareAt}</span>`;
-    }
-    
-    return html;
-  }
-
-  formatMoney(cents) {
-    return '$' + (cents / 100).toFixed(2);
-  }
-
   updateProductFormVariant(variant) {
     const sectionId = this.dataset.sectionId;
-    const productForm = document.querySelector(`#product-form-${sectionId}`);
-    if (productForm) {
-      const variantInput = productForm.querySelector('input[name="id"]');
+    
+    // Find all variant inputs in product forms
+    document.querySelectorAll(`#product-form-${sectionId}`).forEach((form) => {
+      const variantInput = form.querySelector('input[name="id"]');
       if (variantInput) {
         variantInput.value = variant.id;
+      }
+    });
+    
+    // Also try to find variant-selects to sync
+    const variantSelects = document.querySelector('variant-selects');
+    if (variantSelects) {
+      const dataSelectedVariant = variantSelects.querySelector('[data-selected-variant]');
+      if (dataSelectedVariant) {
+        try {
+          const variantData = JSON.parse(dataSelectedVariant.textContent);
+          variantData.id = variant.id;
+          variantData.price = variant.price;
+          variantData.compare_at_price = variant.compare_at_price;
+          dataSelectedVariant.textContent = JSON.stringify(variantData);
+        } catch (e) {
+          console.error('Failed to update variant data:', e);
+        }
       }
     }
   }
 }
 
 customElements.define('custom-variant-picker', CustomVariantPicker);
-
-// Initialize variants from product data on page load
-document.addEventListener('DOMContentLoaded', () => {
-  const picker = document.querySelector('custom-variant-picker');
-  if (picker && typeof product !== 'undefined') {
-    window.productVariants = product.variants.map(v => ({
-      id: v.id,
-      title: v.title,
-      price: v.price,
-      compare_at_price: v.compare_at_price,
-      options: v.options,
-      featured_image: v.featured_image,
-      available: v.available
-    }));
-  }
-});

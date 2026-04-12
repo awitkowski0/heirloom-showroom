@@ -46,8 +46,8 @@
         "variant_picker": {
           "type": "variant_picker",
           "settings": {
-            "picker_type": "custom",
-            "swatch_shape": "square"
+            "picker_type": "button",
+            "swatch_shape": "circle"
           }
         },
         "quantity_selector": {
