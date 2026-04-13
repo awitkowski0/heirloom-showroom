@@ -10,25 +10,25 @@
 {% endcomment %}
 
 {%- unless product.has_only_default_variant -%}
-  {%- assign variants_json = '' -%}
-  {%- for variant in product.variants -%}
-    {%- capture variant_json -%}
-    {
-      "id": {{ variant.id }},
-      "title": {{ variant.title | json }},
-      "price": {{ variant.price }},
-      "compare_at_price": {% if variant.compare_at_price %}{{ variant.compare_at_price }}{% else %}null{% endif %},
-      "featured_image": {% if variant.featured_image %}{{ variant.featured_image | image_url: width: 400 | json }}{% else %}null{% endif %},
-      "options": {{ variant.options | json }},
-      "available": {{ variant.available }}
-    }
-    {%- endcapture -%}
-    {%- if variants_json == '' -%}
-      {%- assign variants_json = variant_json -%}
-    {%- else -%}
-      {%- assign variants_json = variants_json | append: ',' | append: variant_json -%}
-    {%- endif -%}
-  {%- endfor -%}
+  <script type="application/json" data-all-variants hidden>
+    [
+    {%- for variant in product.variants -%}
+      {%- unless forloop.first -%},{%- endunless -%}
+      {
+        "id": {{ variant.id }},
+        "title": {{ variant.title | json }},
+        "price": {{ variant.price }},
+        "compare_at_price": {% if variant.compare_at_price %}{{ variant.compare_at_price }}{% else %}null{% endif %},
+        "featured_image": {% if variant.featured_image %}{{ variant.featured_image | image_url: width: 400 | json }}{% else %}null{% endif %},
+        "options": {{ variant.options | json }},
+        "available": {{ variant.available }}
+      }
+    {%- endfor -%}
+    ]
+  </script>
+  <script type="application/json" data-base-price hidden>
+    {{ product.price | json }}
+  </script>
 
   <div 
     class="custom-variant-picker" 
@@ -37,12 +37,6 @@
     data-image-style="{{ block.settings.custom_image_style | default: 'image' }}"
     {{ block.shopify_attributes }}
   >
-    <script type="application/json" data-all-variants hidden>
-      [{{ variants_json }}]
-    </script>
-    <script type="application/json" data-base-price hidden>
-      {{ product.price | json }}
-    </script>
 
     {%- for option in product.options_with_values -%}
       <div class="custom-option" data-option-index="{{ forloop.index0 }}" data-option-name="{{ option.name }}">
