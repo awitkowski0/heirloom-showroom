@@ -136,6 +136,13 @@
       }
     },
     "content_for_index": [],
+    "blocks": {
+      "6671825970141769053": {
+        "type": "shopify://apps/hoppy-appointments/blocks/appointment_calendar/60b64a0e-7936-41c3-ad56-959d5bdc98a4",
+        "disabled": false,
+        "settings": {}
+      }
+    },
     "color_schemes": {
       "scheme-1": {
         "settings": {
