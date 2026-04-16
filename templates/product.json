@@ -47,12 +47,45 @@
           "type": "variant_picker",
           "settings": {
             "picker_type": "custom",
-            "swatch_shape": "square"
+            "swatch_shape": "square",
+            "custom_image_style": "image"
           }
         },
         "quantity_selector": {
           "type": "quantity_selector",
           "settings": {}
+        },
+        "text_TjdrYz": {
+          "type": "text",
+          "name": "Delivery Options",
+          "settings": {
+            "text": "Select Your Delivery Option at Checkout. We offer two premium delivery options for customers in our eligible delivery states. Select your preferred option when you reach the checkout shipping step. Threshold Delivery — Items delivered to your front door. White Glove Delivery  — Delivered up to two flights of steps. Products fully assembled by our team. Your final delivery fee is confirmed by our team during your delivery consultation. A team member will contact you after your order is placed to confirm all details and finalize pricing.",
+            "text_style": "body"
+          }
+        },
+        "text_jDYa7K": {
+          "type": "text",
+          "name": "Our Delivery Area",
+          "settings": {
+            "text": "We currently offer home delivery to the following states: Pennsylvania (PA), New York (NY), Maryland (MD), Ohio (OH), and New Jersey (NJ). If your state is not listed, please use the Contact Us option at checkout or visit our Contact Us page. We are always expanding our delivery network and would love to work with you.",
+            "text_style": "body"
+          }
+        },
+        "text_W6fFrf": {
+          "type": "text",
+          "name": "How is my Delivery Fee Calculated",
+          "settings": {
+            "text": "Your delivery fee is based on the items in your order. The shipping fee is estimated, and our team will confirm all delivery fees with you when confirming and finalizing your custom order.",
+            "text_style": "body"
+          }
+        },
+        "text_Wcbrbr": {
+          "type": "text",
+          "name": "Not in Our Delivery Area? Have Questions?",
+          "settings": {
+            "text": "If your state is not in our current delivery area, or if you would like to discuss your delivery options before placing your order, our team is ready to help. Contact Us to Discuss Delivery Options (placeholder link). We will work with you personally to find the best delivery solution for your location.",
+            "text_style": "body"
+          }
         },
         "buy_buttons": {
           "type": "buy_buttons",
@@ -116,6 +149,10 @@
         "price",
         "variant_picker",
         "quantity_selector",
+        "text_TjdrYz",
+        "text_jDYa7K",
+        "text_W6fFrf",
+        "text_Wcbrbr",
         "buy_buttons",
         "description",
         "collapsible-row-0",
