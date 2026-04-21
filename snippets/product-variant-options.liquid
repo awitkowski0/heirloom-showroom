@@ -7,7 +7,6 @@
   - block: {Object} block object.
   - picker_type: {String} type of picker to dispay
 
-
   Usage:
   {% render 'product-variant-options',
     product: product,
@@ -79,39 +78,52 @@
       help_text: help_text,
       additional_props: input_dataset
     %}
-{%- elsif picker_type == 'button' -%}
+  {%- elsif picker_type == 'button' -%}
 
-  {% comment %} ============================================================
-    BEGIN NEW CODE — OCS Swatch Data Attributes on Radio Inputs
-    Purpose: Looks up the matching swatch image from product.media for the
-             current stain value + selected wood type combination, then writes
-             the CDN URLs onto the radio input as data attributes so that
-             ocs-swatch-preview.js can read them and populate the inline
-             thumbnail and large preview panel without any extra API calls.
-    Logic:   Matches media where alt == 'swatch' AND src contains both the
-             stain handle (e.g. 'natural', 'fruitwood') AND the wood handle
-             (e.g. 'red_oak', 'brown_maple', 'cherry').
-    Scalable: Add new swatch images with alt='swatch' and matching filename
-              convention — no code changes needed.
-    Author:  Sidekick / Heirloom Cribs
-    Date:    2026-04-21
-  ============================================================ {% endcomment %}
-
-  {%- liquid
-    assign stain_handle = value | handleize
-    assign wood_value = product.selected_or_first_available_variant.option1 | handleize
-    assign ocs_thumb_url = null
-    assign ocs_large_url = null
-    for media in product.media
-      if media.alt == 'swatch' and media.src contains stain_handle and media.src contains wood_value
-        assign ocs_thumb_url = media | image_url: width: 50
-        assign ocs_large_url = media | image_url: width: 800
-        break
-      endif
-    endfor
-  -%}
-
-  {% comment %} END NEW CODE — OCS Swatch Data Attributes on Radio Inputs {% endcomment %}
+    {%- liquid
+      comment
+        ============================================================
+        BEGIN NEW CODE — Robust OCS Swatch Image Lookup
+        CHANGE: Uses downcase + underscore normalization to match
+                actual filenames instead of handleize for wood value.
+                Contains checks are evaluated inline in the if
+                statement — NOT assigned to variables first, which
+                is invalid Liquid syntax and causes parse errors.
+        REASON: Filenames use Red_Oak, Brown_Maple, Cherry (mixed
+                case, underscores) but handleize produces red-oak,
+                brown-maple (lowercase, hyphens) — no match possible.
+                assign x = y contains z is invalid in Liquid and
+                bleeds errors into downstream snippets.
+        LOGIC:  1. handleize stain value (Natural -> natural)
+                2. downcase + underscore wood value (Red Oak -> red_oak)
+                3. downcase media src for case-insensitive compare
+                4. if both contains checks pass inline — assign URLs
+                5. break on first match
+        NOTE:   FQP_OCS_102-frutiwood_Red_Oak.jpg has a typo —
+                Red Oak / Fruitwood will miss until file is renamed.
+        Author: Sidekick / Heirloom Cribs
+        Date:   2026-04-21
+        ============================================================
+      endcomment
+      assign stain_handle = value | handleize
+      assign wood_raw = product.selected_or_first_available_variant.option1
+      assign wood_down = wood_raw | downcase | replace: ' ', '_'
+      assign ocs_thumb_url = null
+      assign ocs_large_url = null
+      for media in product.media
+        if media.alt == 'swatch'
+          assign media_src_down = media.src | downcase
+          if media_src_down contains stain_handle and media_src_down contains wood_down
+            assign ocs_thumb_url = media | image_url: width: 50
+            assign ocs_large_url = media | image_url: width: 800
+            break
+          endif
+        endif
+      endfor
+      comment
+        END NEW CODE — Robust OCS Swatch Image Lookup
+      endcomment
+    -%}
 
     <input
       type="radio"
@@ -144,6 +156,7 @@
       {{ value -}}
       {{ label_unavailable }}
     </label>
+
   {%- elsif picker_type == 'dropdown' or picker_type == 'swatch_dropdown' -%}
     <option
       id="{{ input_id }}"
