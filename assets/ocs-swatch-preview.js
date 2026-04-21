@@ -37,44 +37,44 @@
   function initSwatchPreview(section) {
 
     /* ============================================================
-       BEGIN NEW CODE — Radio input selectors by option position
-       Wood = name*="main-0" (option 1)
-       Stain = name*="main-1" (option 2)
-       REASON: Rendered input names are generated IDs containing
-               the option index, not the option label text.
-               name*="main-0" reliably targets wood pills.
-               name*="main-1" reliably targets stain pills.
+       BEGIN NEW CODE — Value-based radio input identification
+       CHANGE: Replaced name*="main-0/1" index selectors with
+               value-based filtering using known wood option values.
+       REASON: Radio input names use a flat index per value across
+               ALL options — main-0, main-1, main-2 are used by
+               BOTH wood (3 values) and stain (11 values) causing
+               index-based selectors to match wrong inputs.
+               Filtering by known wood values is reliable regardless
+               of how many options or values exist.
+       SCALABLE: Update woodValues array when new wood types are
+                 added to the product. Future improvement: drive
+                 this from a data attribute on the section element
+                 written by Liquid so no JS change is ever needed.
+       Author: Sidekick / Heirloom Cribs
+       Date:   2026-04-21
     ============================================================ */
-    var stainInputs = section.querySelectorAll('input[type="radio"][name*="main-1"]');
-    var woodInputs  = section.querySelectorAll('input[type="radio"][name*="main-0"]');
+    var woodValues  = ['Red Oak', 'Brown Maple', 'Cherry'];
+    var allRadios   = Array.from(section.querySelectorAll('input[type="radio"]'));
+    var woodInputs  = allRadios.filter(function(i) { return woodValues.indexOf(i.value) > -1; });
+    var stainInputs = allRadios.filter(function(i) { return woodValues.indexOf(i.value) === -1; });
+    /* ============================================================
+       END NEW CODE — Value-based radio input identification
+    ============================================================ */
 
     if (!stainInputs.length) return;
-    /* ============================================================
-       END NEW CODE — Radio input selectors by option position
-    ============================================================ */
 
     var previewPanel   = section.querySelector('.ocs-swatch-preview');
     var previewImg     = section.querySelector('.ocs-swatch-preview__image');
     var previewCaption = section.querySelector('.ocs-swatch-preview__caption');
 
-    /* ============================================================
-       BEGIN NEW CODE — Dynamic wood-keyed swatch lookup
-       CHANGE: Was reading data-ocs-swatch-large from checked stain.
-               Now reads data-ocs-swatch-wood-[wood-handle] where
-               wood-handle is derived from the currently checked
-               wood radio input value.
-       REASON: Swatch image must reflect BOTH selected wood AND
-               selected stain. Single attribute approach only
-               reflected the wood selected at page load.
-    ============================================================ */
     function getSelectedWoodHandle() {
-      var checkedWood = section.querySelector('input[type="radio"][name*="main-0"]:checked');
+      var checkedWood = woodInputs.find(function(i) { return i.checked; });
       if (!checkedWood) return null;
       return checkedWood.value.toLowerCase().replace(/\s+/g, '-');
     }
 
     function updateSwatch() {
-      var checkedStain = section.querySelector('input[type="radio"][name*="main-1"]:checked');
+      var checkedStain = stainInputs.find(function(i) { return i.checked; });
       var woodHandle   = getSelectedWoodHandle();
 
       if (!checkedStain || !woodHandle) {
@@ -82,32 +82,30 @@
         return;
       }
 
-      var dataKey  = 'ocsSwatchWood' + woodHandle.replace(/-([a-z])/g, function(g) { return g[1].toUpperCase(); });
-      var largeUrl = checkedStain.dataset[dataKey];
+      /* Convert kebab-handle to camelCase for dataset lookup
+         e.g. red-oak -> ocsSwatchWoodRedOak */
+      var camelKey = 'ocsSwatchWood' + woodHandle
+        .split('-')
+        .map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1); })
+        .join('');
+
+      var largeUrl = checkedStain.dataset[camelKey];
       var label    = checkedStain.value;
 
       if (largeUrl && previewPanel && previewImg) {
-        previewImg.src = largeUrl;
-        previewImg.alt = label;
+        previewImg.src           = largeUrl;
+        previewImg.alt           = label;
         if (previewCaption) previewCaption.textContent = label;
         previewPanel.style.display = 'block';
         previewPanel.classList.add('ocs-swatch-preview--active');
-      } else if (previewPanel) {
-        previewPanel.style.display = 'none';
-        previewPanel.classList.remove('ocs-swatch-preview--active');
+      } else {
+        if (previewPanel) {
+          previewPanel.style.display = 'none';
+          previewPanel.classList.remove('ocs-swatch-preview--active');
+        }
       }
     }
-    /* ============================================================
-       END NEW CODE — Dynamic wood-keyed swatch lookup
-    ============================================================ */
 
-    /* ============================================================
-       BEGIN NEW CODE — Listen on both wood and stain radio groups
-       CHANGE: Was listening only on stain select change event.
-               Now listens on all stain AND wood radio inputs.
-       REASON: Switching wood type must also update the swatch
-               preview to show the correct wood+stain combination.
-    ============================================================ */
     stainInputs.forEach(function(input) {
       input.addEventListener('change', updateSwatch);
     });
@@ -115,9 +113,6 @@
     woodInputs.forEach(function(input) {
       input.addEventListener('change', updateSwatch);
     });
-    /* ============================================================
-       END NEW CODE — Listen on both wood and stain radio groups
-    ============================================================ */
 
     // Run on page load to reflect default selections
     updateSwatch();
