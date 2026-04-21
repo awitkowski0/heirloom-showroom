@@ -374,5 +374,8 @@
     {%- if settings.cart_type == 'drawer' -%}
       <script src="{{ 'cart-drawer.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
+ {% comment %} BEGIN NEW CODE — OCS Swatch Preview Script {% endcomment %}
+<script src="{{ 'ocs-swatch-preview.js' | asset_url }}" defer></script>
+{% comment %} END NEW CODE — OCS Swatch Preview Script {% endcomment %}
   </body>
 </html>
