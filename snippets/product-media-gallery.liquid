@@ -11,6 +11,17 @@
   {% render 'product-media-gallery' %}
 {% endcomment %}
 
+{% comment %} ============================================================
+  CHANGE: media_count excludes images tagged alt="swatch"
+  REASON: Swatch images must not count toward the slideshow total —
+          the slider counter (e.g. "1 / 6") should reflect only the
+          hero/lifestyle images visible to the customer
+  SCALABLE: Tag any future vendor swatch images alt="swatch" and they
+            are automatically excluded — no code changes ever needed
+  ORIGINAL: assign media_count = product.media.size
+  DATE:   2026-04-17
+  ============================================================ {% endcomment %}
+
 {%- liquid
   if section.settings.hide_variants and variant_images.size == product.media.size
     assign single_media_visible = true
@@ -20,10 +31,12 @@
     assign single_media_visible = true
   endif
 
-  assign media_count = product.media.size
-  if section.settings.hide_variants and media_count > 1 and variant_images.size > 0
-    assign media_count = media_count | minus: variant_images.size | plus: 1
-  endif
+  assign media_count = 0
+  for media in product.media
+    unless media.alt == 'swatch'
+      assign media_count = media_count | plus: 1
+    endunless
+  endfor
 
   if media_count == 1 or single_media_visible
     assign single_media_visible_mobile = true
@@ -61,12 +74,28 @@
       class="product__media-list contains-media grid grid--peek list-unstyled slider slider--mobile"
       role="list"
     >
-      {%- if product.selected_or_first_available_variant.featured_media != null -%}
-        {%- assign featured_media = product.selected_or_first_available_variant.featured_media -%}
+{% comment %} ============================================================
+  CHANGE: Default featured media to second image in gallery (index 1)
+  REASON: Client wants the second product image to display first on page
+          load, not the variant's assigned featured image
+  EFFECT: Uses product.media[1] as the hero; falls back to variant
+          featured media only if a second image does not exist
+  DATE:   2026-04-17
+  ============================================================ {% endcomment %}
+
+{% comment %} --- ORIGINAL CODE (disabled) ---
+{%- if product.selected_or_first_available_variant.featured_media != null -%}
+  {%- assign featured_media = product.selected_or_first_available_variant.featured_media -%}
+{% endcomment %}
+
+{% comment %} --- NEW CODE --- {% endcomment %}
+{%- if product.selected_or_first_available_variant.featured_media != null -%}
+  {%- assign featured_media = product.media[1] | default: product.selected_or_first_available_variant.featured_media -%}
         <li
           id="Slide-{{ section.id }}-{{ featured_media.id }}"
           class="product__media-item grid__item slider__slide is-active{% if single_media_visible %} product__media-item--single{% endif %}{% if featured_media.media_type != 'image' %} product__media-item--full{% endif %}{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--fade-in{% endif %}"
           data-media-id="{{ section.id }}-{{ featured_media.id }}"
+          {% comment %} --- END NEW CODE --- {% endcomment %}
         >
           {%- assign media_position = 1 -%}
           {% render 'product-thumbnail',
@@ -86,13 +115,42 @@
         </li>
       {%- endif -%}
       {%- for media in product.media -%}
-        {% if media_position >= limit
-          or media_position >= 1
-          and section.settings.hide_variants
-          and variant_images contains media.src
-        %}
-          {% continue %}
-        {% endif %}
+{% comment %} ============================================================
+  CHANGE: Remove variant image suppression from media loop
+  REASON: Client wants ALL product images shown in the slideshow at all
+          times — variant color images should not be hidden on variant select
+  EFFECT: Only the 'limit' parameter can now skip images; hide_variants
+          filtering is fully disabled
+  DATE:   2026-04-17
+  ============================================================ {% endcomment %}
+
+{% comment %} --- ORIGINAL CODE (disabled) ---
+{% if media_position >= limit
+  or media_position >= 1
+  and section.settings.hide_variants
+  and variant_images contains media.src
+%}
+  {% continue %}
+{% endif %}
+{% endcomment %}
+
+{% comment %} --- NEW CODE --- {% endcomment %}
+{% if media_position >= limit %}
+  {% continue %}
+{% endif %}
+{% comment %} --- END NEW CODE --- {% endcomment %}
+{% comment %} ============================================================
+  CHANGE: Skip images tagged alt="swatch" in main slider loop
+  REASON: Variant color swatch images should not appear in the
+          customer-facing slideshow — they exist only for variant selection
+  EFFECT: Any image with alt text exactly "swatch" is skipped;
+          all hero/lifestyle images (blank alt or descriptive) render normally
+  SCALABLE: Works for all vendors — just tag swatch images alt="swatch"
+  DATE:   2026-04-17
+  ============================================================ {% endcomment %}
+{%- if media.alt == 'swatch' -%}
+  {%- continue -%}
+{%- endif -%}
 
         {%- unless media.id == product.selected_or_first_available_variant.featured_media.id -%}
           <li
@@ -154,6 +212,35 @@
       </button>
     </div>
   </slider-component>
+    {% comment %} ============================================================
+    BEGIN NEW CODE — OCS Swatch Large Preview Panel
+    Purpose: Hidden panel below main slider; JS reveals and populates it
+             when customer selects a stain from the dropdown.
+    Author: Sidekick / Heirloom Cribs
+    DATE: 2026-04-20
+    ============================================================ {% endcomment %}
+  <div
+    id="ocs-swatch-preview-{{ section.id }}"
+    class="ocs-swatch-preview"
+    aria-live="polite"
+    style="display:none;"
+  >
+    <div class="ocs-swatch-preview__inner">
+      <img
+        id="ocs-swatch-preview-img-{{ section.id }}"
+        class="ocs-swatch-preview__image"
+        src=""
+        alt=""
+        width="800"
+        height="800"
+        loading="lazy"
+      >
+      <p
+        id="ocs-swatch-preview-caption-{{ section.id }}"
+        class="ocs-swatch-preview__caption"
+      ></p>
+    </div>
+  </div>
   {%- if first_3d_model -%}
     <button
       class="button button--full-width product__xr-button"
@@ -253,6 +340,16 @@
         {%- endif -%}
         {%- for media in product.media -%}
           {%- unless media.id == product.selected_or_first_available_variant.featured_media.id -%}
+{% comment %} ============================================================
+  CHANGE: Skip images tagged alt="swatch" in thumbnail strip loop
+  REASON: Swatch images must not appear as navigable thumbnails
+  SCALABLE: Works for all vendors — tag swatch images alt="swatch"
+  DATE:   2026-04-17
+  ============================================================ {% endcomment %}
+{%- if media.alt == 'swatch' -%}
+  {%- continue -%}
+{%- endif -%}
+
             {%- liquid
               capture media_index
                 if media.media_type == 'model'
