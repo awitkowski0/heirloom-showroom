@@ -79,7 +79,40 @@
       help_text: help_text,
       additional_props: input_dataset
     %}
-  {%- elsif picker_type == 'button' -%}
+{%- elsif picker_type == 'button' -%}
+
+  {% comment %} ============================================================
+    BEGIN NEW CODE — OCS Swatch Data Attributes on Radio Inputs
+    Purpose: Looks up the matching swatch image from product.media for the
+             current stain value + selected wood type combination, then writes
+             the CDN URLs onto the radio input as data attributes so that
+             ocs-swatch-preview.js can read them and populate the inline
+             thumbnail and large preview panel without any extra API calls.
+    Logic:   Matches media where alt == 'swatch' AND src contains both the
+             stain handle (e.g. 'natural', 'fruitwood') AND the wood handle
+             (e.g. 'red_oak', 'brown_maple', 'cherry').
+    Scalable: Add new swatch images with alt='swatch' and matching filename
+              convention — no code changes needed.
+    Author:  Sidekick / Heirloom Cribs
+    Date:    2026-04-21
+  ============================================================ {% endcomment %}
+
+  {%- liquid
+    assign stain_handle = value | handleize
+    assign wood_value = product.selected_or_first_available_variant.option1 | handleize
+    assign ocs_thumb_url = null
+    assign ocs_large_url = null
+    for media in product.media
+      if media.alt == 'swatch' and media.src contains stain_handle and media.src contains wood_value
+        assign ocs_thumb_url = media | image_url: width: 50
+        assign ocs_large_url = media | image_url: width: 800
+        break
+      endif
+    endfor
+  -%}
+
+  {% comment %} END NEW CODE — OCS Swatch Data Attributes on Radio Inputs {% endcomment %}
+
     <input
       type="radio"
       id="{{ input_id }}"
@@ -92,6 +125,19 @@
       {% if option_disabled %}
         class="disabled"
       {% endif %}
+      {% comment %} ============================================================
+        BEGIN NEW CODE — Write OCS swatch URLs onto input element
+        Purpose: data-ocs-swatch-thumb and data-ocs-swatch-large are read by
+                 ocs-swatch-preview.js on radio change events to update the
+                 inline thumbnail and large preview panel below the gallery.
+                 Only written when a matching swatch image was found above.
+        Date:    2026-04-21
+      ============================================================ {% endcomment %}
+      {% if ocs_thumb_url %}
+        data-ocs-swatch-thumb="{{ ocs_thumb_url }}"
+        data-ocs-swatch-large="{{ ocs_large_url }}"
+      {% endif %}
+      {% comment %} END NEW CODE — Write OCS swatch URLs onto input element {% endcomment %}
       {{ input_dataset }}
     >
     <label for="{{ input_id }}">
