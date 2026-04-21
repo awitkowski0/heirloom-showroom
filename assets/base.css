@@ -3822,3 +3822,28 @@ details-disclosure > details {
 /* ============================================================
    END NEW CODE — media--height container fix
 ============================================================ */
+/* ============================================================
+   BEGIN NEW CODE — product__media aspect ratio fix
+   REASON: .product__media has overflow:hidden and position:relative
+           but padding-bottom is 0px, causing the container to collapse
+           to 1px height. Images inside have offsetHeight:0 and are
+           clipped by overflow:hidden. Setting padding-bottom to 100%
+           creates a square aspect ratio container that allows images
+           to render at their natural size.
+   DATE:   2026-04-21
+============================================================ */
+.product__media.media--transparent {
+  padding-bottom: 100%;
+}
+
+.product__media.media--transparent img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* ============================================================
+   END NEW CODE — product__media aspect ratio fix
+============================================================ */
