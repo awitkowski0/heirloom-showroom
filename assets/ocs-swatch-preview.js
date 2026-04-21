@@ -1,99 +1,91 @@
 /**
- * OCS Swatch Preview — Stain Color Picker
+ * OCS Swatch Preview — Stain + Wood Color Picker
  * ============================================================
- * Purpose: Wires the "Stain and color options" radio inputs to:
- *   1. Reveal and update a large swatch preview panel below the
- *      main product media gallery when a stain is selected
- *   2. Show an inline thumbnail beside the selected swatch label
+ * Purpose: Wires the stain radio inputs and wood radio inputs to
+ *          reveal and update a large swatch preview panel below
+ *          the main product media gallery when either selection
+ *          changes.
  *
  * Reads data attributes written by product-variant-options.liquid:
- *   data-ocs-swatch-thumb  — 50px CDN URL for inline thumbnail
- *   data-ocs-swatch-large  — 800px CDN URL for large preview panel
+ *   data-ocs-swatch-wood-[wood-handle] — 800px CDN URL per wood type
+ *   e.g. data-ocs-swatch-wood-red-oak="https://cdn..."
+ *        data-ocs-swatch-wood-brown-maple="https://cdn..."
+ *        data-ocs-swatch-wood-cherry="https://cdn..."
  *
  * ============================================================
- * CHANGE: Rewrote selector from select[name*="Stain"] to radio
- *         inputs identified by option position (name*="main-1").
- * REASON: The picker type is 'button' (pill/radio), not dropdown.
- *         The rendered input name is a generated ID like
- *         "Option-template--20496124117166__main-1" — it does not
- *         contain the word "Stain" so the original select selector
- *         always returned null and the JS silently exited.
- * EFFECT: JS now correctly finds all stain radio inputs, reads
- *         data-ocs-swatch-thumb and data-ocs-swatch-large, and
- *         populates the preview panel on change and page load.
+ * CHANGE: Rewrote from select[name*="Stain"] single-attribute
+ *         approach to radio input multi-attribute approach.
+ * REASON: 1. Picker type is button/pill — no <select> exists.
+ *         2. Single data attribute was baked in at page load for
+ *            the default wood only — switching wood showed wrong
+ *            swatch image.
+ *         3. New architecture writes one attribute per wood and
+ *            reads the correct one based on currently selected wood.
+ * SCALABLE: Works for any number of vendors, wood types, and stains.
+ *           No code changes needed when new products are added.
+ *           Vendor spec: option 1 = wood, option 2 = stain.
  * Author: Sidekick / Heirloom Cribs
  * Date:   2026-04-21
  * ============================================================
  *
- * Targets by section ID to support multiple sections per page.
  * No dependencies — vanilla JS only.
  */
 
 (function () {
   'use strict';
 
-  /**
-   * Initialize swatch preview for a single product section.
-   * @param {HTMLElement} section - The product section root element
-   */
   function initSwatchPreview(section) {
 
     /* ============================================================
-       BEGIN NEW CODE — Radio input selector by option position
-       CHANGE: Was select[name*="Stain"] — now targets radio inputs
-               whose name contains "main-1" (position index of the
-               Stain and color options group in the rendered DOM).
-       REASON: Picker is button/pill type — no <select> exists.
-               Name pattern "main-1" reliably identifies the second
-               option group (stain) regardless of section ID changes.
+       BEGIN NEW CODE — Radio input selectors by option position
+       Wood = name*="main-0" (option 1)
+       Stain = name*="main-1" (option 2)
+       REASON: Rendered input names are generated IDs containing
+               the option index, not the option label text.
+               name*="main-0" reliably targets wood pills.
+               name*="main-1" reliably targets stain pills.
     ============================================================ */
-    const stainInputs = section.querySelectorAll('input[type="radio"][name*="main-1"]');
-    if (!stainInputs.length) return; // Not a product with stain options — exit silently
+    var stainInputs = section.querySelectorAll('input[type="radio"][name*="main-1"]');
+    var woodInputs  = section.querySelectorAll('input[type="radio"][name*="main-0"]');
+
+    if (!stainInputs.length) return;
     /* ============================================================
-       END NEW CODE — Radio input selector by option position
+       END NEW CODE — Radio input selectors by option position
     ============================================================ */
 
-    /* ============================================================
-       BEGIN NEW CODE — Section ID derived from panel element
-       CHANGE: Was derived from section.dataset.sectionId which
-               returned a shortened ID. Now reads the actual panel
-               element ID directly to guarantee the correct suffix
-               (e.g. template--20496124117166__main).
-       REASON: Panel IDs are set by Liquid using section.id which
-               includes the full template--XXXXXXXXXXXXXXXX__main
-               string. Deriving the ID from dataset caused a mismatch
-               and the panel was never found.
-    ============================================================ */
-    const previewPanel   = section.querySelector('[id^="ocs-swatch-preview-"][id$="' + (section.dataset.sectionId || '') + '"]') || section.querySelector('.ocs-swatch-preview');
-    const previewImg     = section.querySelector('[id^="ocs-swatch-preview-img-"]');
-    const previewCaption = section.querySelector('[id^="ocs-swatch-preview-caption-"]');
-    /* ============================================================
-       END NEW CODE — Section ID derived from panel element
-    ============================================================ */
+    var previewPanel   = section.querySelector('.ocs-swatch-preview');
+    var previewImg     = section.querySelector('.ocs-swatch-preview__image');
+    var previewCaption = section.querySelector('.ocs-swatch-preview__caption');
 
-    /**
-     * Update preview panel from the currently checked stain radio input.
-     */
+    /* ============================================================
+       BEGIN NEW CODE — Dynamic wood-keyed swatch lookup
+       CHANGE: Was reading data-ocs-swatch-large from checked stain.
+               Now reads data-ocs-swatch-wood-[wood-handle] where
+               wood-handle is derived from the currently checked
+               wood radio input value.
+       REASON: Swatch image must reflect BOTH selected wood AND
+               selected stain. Single attribute approach only
+               reflected the wood selected at page load.
+    ============================================================ */
+    function getSelectedWoodHandle() {
+      var checkedWood = section.querySelector('input[type="radio"][name*="main-0"]:checked');
+      if (!checkedWood) return null;
+      return checkedWood.value.toLowerCase().replace(/\s+/g, '-');
+    }
+
     function updateSwatch() {
+      var checkedStain = section.querySelector('input[type="radio"][name*="main-1"]:checked');
+      var woodHandle   = getSelectedWoodHandle();
 
-      /* ============================================================
-         BEGIN NEW CODE — Read data attributes from checked radio input
-         CHANGE: Was reading dataset from a <select> option element.
-                 Now finds the checked radio input within the stain
-                 group and reads data-ocs-swatch-thumb and
-                 data-ocs-swatch-large directly from that input.
-         REASON: Radio inputs hold the data attributes written by
-                 product-variant-options.liquid, not a <select>.
-      ============================================================ */
-      const checked  = section.querySelector('input[type="radio"][name*="main-1"]:checked');
-      const thumbUrl = checked ? checked.dataset.ocsSwatchThumb : null;
-      const largeUrl = checked ? checked.dataset.ocsSwatchLarge : null;
-      const label    = checked ? checked.value : '';
-      /* ============================================================
-         END NEW CODE — Read data attributes from checked radio input
-      ============================================================ */
+      if (!checkedStain || !woodHandle) {
+        if (previewPanel) previewPanel.style.display = 'none';
+        return;
+      }
 
-      // Update large preview panel
+      var dataKey  = 'ocsSwatchWood' + woodHandle.replace(/-([a-z])/g, function(g) { return g[1].toUpperCase(); });
+      var largeUrl = checkedStain.dataset[dataKey];
+      var label    = checkedStain.value;
+
       if (largeUrl && previewPanel && previewImg) {
         previewImg.src = largeUrl;
         previewImg.alt = label;
@@ -105,37 +97,38 @@
         previewPanel.classList.remove('ocs-swatch-preview--active');
       }
     }
+    /* ============================================================
+       END NEW CODE — Dynamic wood-keyed swatch lookup
+    ============================================================ */
 
     /* ============================================================
-       BEGIN NEW CODE — Attach change listeners to all stain radios
-       CHANGE: Was a single 'change' event on a <select> element.
-               Now attaches a listener to every stain radio input
-               so any pill click triggers the swatch update.
-       REASON: Radio inputs each fire their own change event —
-               there is no single container element to listen on.
+       BEGIN NEW CODE — Listen on both wood and stain radio groups
+       CHANGE: Was listening only on stain select change event.
+               Now listens on all stain AND wood radio inputs.
+       REASON: Switching wood type must also update the swatch
+               preview to show the correct wood+stain combination.
     ============================================================ */
-    stainInputs.forEach(function (input) {
+    stainInputs.forEach(function(input) {
+      input.addEventListener('change', updateSwatch);
+    });
+
+    woodInputs.forEach(function(input) {
       input.addEventListener('change', updateSwatch);
     });
     /* ============================================================
-       END NEW CODE — Attach change listeners to all stain radios
+       END NEW CODE — Listen on both wood and stain radio groups
     ============================================================ */
 
-    // Run on page load to reflect default selected stain
+    // Run on page load to reflect default selections
     updateSwatch();
   }
 
-  /**
-   * Run init on all product sections present on the page.
-   * Uses MutationObserver to handle dynamically loaded sections.
-   */
   function init() {
     document.querySelectorAll('.shopify-section').forEach(initSwatchPreview);
 
-    // Watch for dynamically added sections (quick add, etc.)
-    var observer = new MutationObserver(function (mutations) {
-      mutations.forEach(function (mutation) {
-        mutation.addedNodes.forEach(function (node) {
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
           if (node.nodeType === 1 && node.classList.contains('shopify-section')) {
             initSwatchPreview(node);
           }
@@ -146,7 +139,6 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Wait for DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
@@ -154,4 +146,3 @@
   }
 
 })();
-
