@@ -1,184 +1,127 @@
 {% comment %}
-  Renders product variant options
+  Renders a product thumbnail
 
   Accepts:
-  - product: {Object} product object.
-  - option: {Object} current product_option object.
-  - block: {Object} block object.
-  - picker_type: {String} type of picker to dispay
+  - media: {Object} Product media object
+  - media_count: {Number} Number of media objects
+  - position: {String} Position of the media. Used for accessible label.
+  - desktop_layout: {String} Layout of the media on desktop. Values: 'columns', 'thumbnail', 'thumbnail_slider'
+  - mobile_layout: {String} Layout of the media on mobile. Values: 'columns', 'show'
+  - loop: {Boolean} Enable video looping
+  - modal_id: {String} The modal that will be opened if the media is not a image
+  - xr_button: {Boolean} Show the XR button
+  - media_width: {Float} The width of the media on desktop
+  - media_fit: {String} The fit of the media on desktop. Values: 'contain', 'cover'
+  - constrain_to_viewport: {Boolean} Whether to constrain the media to the viewport height
+  - lazy_load: {Boolean} Image should be lazy loaded. Default: true (optional)
 
   Usage:
-  {% render 'product-variant-options',
-    product: product,
-    option: option,
-    block: block
-    picker_type: picker_type
+  {% render 'product-thumbnail',
+    media: media,
+    media_count: media_count,
+    position: media_position,
+    desktop_layout: section.settings.gallery_layout,
+    mobile_layout: section.settings.mobile_thumbnails,
+    loop: section.settings.enable_video_looping,
+    modal_id: section.id,
+    xr_button: true,
+    media_width: media_width,
+    media_fit: section.settings.media_fit,
+    constrain_to_viewport: section.settings.constrain_to_viewport,
+    lazy_load: false
   %}
 {% endcomment %}
+
 {%- liquid
-  assign product_form_id = 'product-form-' | append: section.id
+  assign ratio = 1
+  if media.preview_image and media.preview_image.aspect_ratio != blank
+    assign ratio = media.preview_image.aspect_ratio
+  endif
+
+  if constrain_to_viewport
+    assign max_height_class = 'media--height'
+  endif
+
+  if media_fit == 'cover'
+    assign media_fit_class = 'media--cover'
+  endif
 -%}
 
-{%- for value in option.values -%}
-  {%- liquid
-    assign swatch_focal_point = null
-    if value.swatch.image
-      assign image_url = value.swatch.image | image_url: width: 50
-      assign swatch_value = 'url(' | append: image_url | append: ')'
-      assign swatch_focal_point = value.swatch.image.presentation.focal_point
-    elsif value.swatch.color
-      assign swatch_value = 'rgb(' | append: value.swatch.color.rgb | append: ')'
-    else
-      assign swatch_value = null
-    endif
-
-    assign option_disabled = true
-    if value.available
-      assign option_disabled = false
-    endif
-  -%}
-
-  {%- capture input_id -%}
-    {{ section.id }}-{{ option.position }}-{{ forloop.index0 -}}
-  {%- endcapture -%}
-
-  {%- capture input_name -%}
-    {{ option.name }}-{{ option.position }}
-  {%- endcapture -%}
-
-  {%- capture input_dataset -%}
-    data-product-url="{{ value.product_url }}"
-    data-option-value-id="{{ value.id }}"
-  {%- endcapture -%}
-
-  {%- capture label_unavailable -%}
-    <span class="visually-hidden label-unavailable">
-      {{- 'products.product.variant_sold_out_or_unavailable' | t -}}
-    </span>
-  {%- endcapture -%}
-
-  {% assign escaped_value = value | escape %}
-
-  {%- if picker_type == 'swatch' -%}
-    {%- capture help_text -%}
-      <span class="visually-hidden">{{ escaped_value }}</span>
-      {{ label_unavailable }}
-    {%- endcapture -%}
-
-    {%
-      render 'swatch-input',
-      id: input_id,
-      name: input_name,
-      value: escaped_value,
-      swatch: value.swatch,
-      product_form_id: product_form_id,
-      checked: value.selected,
-      visually_disabled: option_disabled,
-      shape: block.settings.swatch_shape,
-      help_text: help_text,
-      additional_props: input_dataset
-    %}
-  {%- elsif picker_type == 'button' -%}
-
-    {%- liquid
-      comment
-        ============================================================
-        BEGIN NEW CODE — Robust OCS Swatch Image Lookup
-        CHANGE: Replaced handleize-based wood match with downcase +
-                underscore normalization to match actual filenames.
-        REASON: product.media filenames use underscore-separated words
-                with mixed case (e.g. Red_Oak, Brown_Maple, Cherry)
-                but handleize produces hyphen-separated lowercase
-                (e.g. red-oak, brown-maple) causing all wood matches
-                to fail and returning no swatch image for any variant.
-        LOGIC:  1. Downcase both the filename src and the lookup values
-                2. Replace spaces with underscores in the wood value
-                   to match the filename convention (Red Oak -> red_oak)
-                3. Match stain by handleized value (natural, fruitwood)
-                4. Match wood by downcased underscore value (red_oak)
-                5. Break on first match to avoid unnecessary iterations
-        NOTE:   FQP_OCS_102-frutiwood_Red_Oak.jpg has a typo (frutiwood
-                vs fruitwood) — Red Oak / Fruitwood will still miss until
-                that file is renamed in the product media admin.
-        Scalable: Works for any new wood or stain added — just follow
-                  the filename convention: stain-handle_Wood_Name.jpg
-        Author: Sidekick / Heirloom Cribs
-        Date:   2026-04-21
-        ============================================================
-      endcomment
-      assign stain_handle = value | handleize
-      assign wood_raw = product.selected_or_first_available_variant.option1
-      assign wood_down = wood_raw | downcase | replace: ' ', '_'
-      assign ocs_thumb_url = null
-      assign ocs_large_url = null
-      for media in product.media
-        if media.alt == 'swatch'
-          assign media_src_down = media.src | downcase
-          assign stain_check = media_src_down contains stain_handle
-          assign wood_check = media_src_down contains wood_down
-          if stain_check and wood_check
-            assign ocs_thumb_url = media | image_url: width: 50
-            assign ocs_large_url = media | image_url: width: 800
-            break
-          endif
-        endif
-      endfor
-      comment
-        END NEW CODE — Robust OCS Swatch Image Lookup
-      endcomment
-    -%}
-
-    <input
-      type="radio"
-      id="{{ input_id }}"
-      name="{{ input_name | escape }}"
-      value="{{ escaped_value }}"
-      form="{{ product_form_id }}"
-      {% if value.selected %}
-        checked
-      {% endif %}
-      {% if option_disabled %}
-        class="disabled"
-      {% endif %}
-      {% comment %} ============================================================
-        BEGIN NEW CODE — Write OCS swatch URLs onto input element
-        Purpose: data-ocs-swatch-thumb and data-ocs-swatch-large are read by
-                 ocs-swatch-preview.js on radio change events to update the
-                 inline thumbnail and large preview panel below the gallery.
-                 Only written when a matching swatch image was found above.
-        Date:    2026-04-21
-      ============================================================ {% endcomment %}
-      {% if ocs_thumb_url %}
-        data-ocs-swatch-thumb="{{ ocs_thumb_url }}"
-        data-ocs-swatch-large="{{ ocs_large_url }}"
-      {% endif %}
-      {% comment %} END NEW CODE — Write OCS swatch URLs onto input element {% endcomment %}
-      {{ input_dataset }}
-    >
-    <label for="{{ input_id }}">
-      {{ value -}}
-      {{ label_unavailable }}
-    </label>
-  {%- elsif picker_type == 'dropdown' or picker_type == 'swatch_dropdown' -%}
-    <option
-      id="{{ input_id }}"
-      value="{{ escaped_value }}"
-      {% if value.selected %}
-        selected="selected"
-      {% endif %}
-      {% if swatch_value and picker_type == 'swatch_dropdown' %}
-        data-option-swatch-value="{{ swatch_value }}"
-        {% if swatch_focal_point %}
-          data-option-swatch-focal-point="{{ swatch_focal_point }}"
-        {% endif %}
-      {% endif %}
-      {{ input_dataset }}
-    >
-      {% if option_disabled -%}
-        {{- 'products.product.value_unavailable' | t: option_value: value -}}
-      {%- else -%}
-        {{- value -}}
-      {%- endif %}
-    </option>
+<div
+  class="product__media media media--transparent{% if media_count == 1 %} media--no-border{% endif %} {{ max_height_class }} {{ media_fit_class }} global-media-settings"
+  {% if constrain_to_viewport %}
+    style="--ratio-percent: {{ 1 | divided_by: ratio | times: 100 }}%;"
+  {% endif %}
+>
+  {%- if media.media_type == 'image' -%}
+    {{
+      media.preview_image
+      | image_url: width: 1946
+      | image_tag:
+        loading: lazy_load | default: 'lazy',
+        sizes: '(min-width: 1200px) 550px, (min-width: 990px) calc(55vw - 11rem), (min-width: 750px) calc(50vw - 11rem), calc(100vw - 4rem)',
+        widths: '246, 493, 600, 713, 823, 990, 1100, 1206, 1346, 1426, 1646, 1946',
+        alt: media.alt | escape
+    }}
+  {%- elsif media.media_type == 'external_video' -%}
+    {%- if media.host == 'youtube' -%}
+      {{
+        media
+        | external_video_url: autoplay: true, loop: loop, playlist: media.external_id
+        | external_video_tag: loading: 'lazy', class: 'js-youtube'
+      }}
+    {%- else -%}
+      {{
+        media
+        | external_video_url: autoplay: true, loop: loop
+        | external_video_tag: loading: 'lazy', class: 'js-vimeo'
+      }}
+    {%- endif -%}
+  {%- elsif media.media_type == 'video' -%}
+    {{
+      media
+      | media_tag:
+        image_size: '2048x',
+        autoplay: true,
+        loop: loop,
+        controls: true,
+        preload: 'none'
+    }}
+  {%- elsif media.media_type == 'model' -%}
+    {{
+      media
+      | media_tag:
+        image_size: '2048x',
+        toggleable: true
+    }}
   {%- endif -%}
-{%- endfor -%}
+  {%- if media.media_type != 'image' -%}
+    {%- if media.media_type == 'model' -%}
+      <button
+        class="product__xr-button"
+        type="button"
+        aria-label="{{ 'products.product.xr_button_label' | t }}"
+        data-shopify-xr
+        data-shopify-model3d-id="{{ media.id }}"
+        data-shopify-title="{{ product.title | escape }}"
+        data-shopify-xr-hidden
+      >
+        <span class="svg-wrapper">
+          {{- 'icon-3d-model.svg' | inline_asset_content -}}
+        </span>
+        {{ 'products.product.xr_button' | t }}
+      </button>
+    {%- endif -%}
+    <div class="product__media-icon">
+      {%- if media.media_type == 'model' -%}
+        <span class="svg-wrapper">
+          {{- 'icon-3d-model.svg' | inline_asset_content -}}
+        </span>
+      {%- elsif media.media_type == 'video' or media.media_type == 'external_video' -%}
+        <span class="svg-wrapper">
+          {{- 'icon-play.svg' | inline_asset_content -}}
+        </span>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</div>
