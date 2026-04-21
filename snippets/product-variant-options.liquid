@@ -114,7 +114,7 @@
       assign ocs_swatch_dataset = ''
       if option.position == 2
         assign stain_handle = value | handleize
-        for wood_value in product.options_by_name[product.options[0]].values
+          for wood_value in product.options_with_values[0].values
           assign wood_handle = wood_value | handleize
           assign wood_down = wood_value | downcase | replace: ' ', '_'
           for media in product.media
