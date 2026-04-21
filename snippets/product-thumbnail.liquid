@@ -38,9 +38,20 @@
     assign ratio = media.preview_image.aspect_ratio
   endif
 
-  if constrain_to_viewport
-    assign max_height_class = 'media--height'
-  endif
+  comment
+    ============================================================
+    BEGIN NEW CODE — Disable media--height class
+    REASON: No CSS rule exists in this theme for media--height.
+            Applying it collapses the image container to 1px.
+            Constrain to viewport is intentionally disabled here
+            to restore normal gallery image rendering.
+    DATE:   2026-04-21
+    ============================================================
+  endcomment
+  assign max_height_class = ''
+  comment
+    END NEW CODE — Disable media--height class
+  endcomment
 
   if media_fit == 'cover'
     assign media_fit_class = 'media--cover'
@@ -49,10 +60,15 @@
 
 <div
   class="product__media media media--transparent{% if media_count == 1 %} media--no-border{% endif %} {{ max_height_class }} {{ media_fit_class }} global-media-settings"
-  {% if constrain_to_viewport %}
-    style="--ratio-percent: {{ 1 | divided_by: ratio | times: 100 }}%;"
-  {% endif %}
 >
+  {% comment %}
+    BEGIN NEW CODE — ratio-percent inline style removed
+    REASON: No CSS consumes --ratio-percent in this theme.
+            Removing prevents --ratio-percent from being set
+            on an element with no corresponding CSS rule which
+            caused the container to collapse to 1px height.
+    DATE:   2026-04-21
+  {% endcomment %}
   {%- if media.media_type == 'image' -%}
     {{
       media.preview_image
