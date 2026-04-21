@@ -3805,3 +3805,20 @@ details-disclosure > details {
 /* ============================================================
    END NEW CODE — OCS Swatch Preview Styles
    ============================================================ */
+/* ============================================================
+   BEGIN NEW CODE — media--height container fix
+   REASON: product-thumbnail.liquid applies media--height class
+           when constrain_to_viewport is enabled, but no CSS rule
+           existed for this class in the theme. Without it the
+           image container collapses to 1px height causing the
+           product gallery to appear invisible.
+   DATE:   2026-04-21
+============================================================ */
+.product__media.media--height {
+  padding-bottom: 0;
+  height: calc(var(--ratio-percent) * 1vh);
+  max-height: 80vh;
+}
+/* ============================================================
+   END NEW CODE — media--height container fix
+============================================================ */
