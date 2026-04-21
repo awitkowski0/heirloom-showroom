@@ -83,45 +83,55 @@
     {%- liquid
       comment
         ============================================================
-        BEGIN NEW CODE — Robust OCS Swatch Image Lookup
-        CHANGE: Uses downcase + underscore normalization to match
-                actual filenames instead of handleize for wood value.
-                Contains checks are evaluated inline in the if
-                statement — NOT assigned to variables first, which
-                is invalid Liquid syntax and causes parse errors.
-        REASON: Filenames use Red_Oak, Brown_Maple, Cherry (mixed
-                case, underscores) but handleize produces red-oak,
-                brown-maple (lowercase, hyphens) — no match possible.
-                assign x = y contains z is invalid in Liquid and
-                bleeds errors into downstream snippets.
-        LOGIC:  1. handleize stain value (Natural -> natural)
-                2. downcase + underscore wood value (Red Oak -> red_oak)
-                3. downcase media src for case-insensitive compare
-                4. if both contains checks pass inline — assign URLs
-                5. break on first match
+        BEGIN NEW CODE — Scalable OCS Swatch Data Attributes
+        CHANGE: Replaced single data-ocs-swatch-thumb/large with one
+                data attribute per wood type, keyed by handleized wood
+                value. e.g. data-ocs-swatch-wood-red-oak="URL"
+        REASON: Single data attribute approach used the selected variant
+                at page load to determine wood — so switching wood type
+                after page load would show the wrong swatch image.
+                Writing one attribute per wood allows JS to dynamically
+                pick the correct image when either wood or stain changes.
+        LOGIC:  1. Only run for stain option (position 2)
+                2. For each wood in option1.values, handleize the wood
+                   name to build a safe data attribute key
+                3. Downcase both media src and lookup values
+                4. Match media where alt=swatch AND src contains both
+                   stain handle and wood handle
+                5. Write matched URL as data-ocs-swatch-wood-[wood-handle]
+        SCALABLE: New vendors with different wood types are handled
+                  automatically — no code changes needed. Just follow
+                  the filename convention and tag alt="swatch".
+        VENDOR SPEC: Option 1 = wood type, Option 2 = stain/color.
+                     Swatch filename must contain stain handle AND
+                     wood name. e.g. natural_Red_Oak.jpg alt="swatch"
         NOTE:   FQP_OCS_102-frutiwood_Red_Oak.jpg has a typo —
                 Red Oak / Fruitwood will miss until file is renamed.
         Author: Sidekick / Heirloom Cribs
         Date:   2026-04-21
         ============================================================
       endcomment
-      assign stain_handle = value | handleize
-      assign wood_raw = product.selected_or_first_available_variant.option1
-      assign wood_down = wood_raw | downcase | replace: ' ', '_'
-      assign ocs_thumb_url = null
-      assign ocs_large_url = null
-      for media in product.media
-        if media.alt == 'swatch'
-          assign media_src_down = media.src | downcase
-          if media_src_down contains stain_handle and media_src_down contains wood_down
-            assign ocs_thumb_url = media | image_url: width: 50
-            assign ocs_large_url = media | image_url: width: 800
-            break
-          endif
-        endif
-      endfor
+      assign ocs_swatch_dataset = ''
+      if option.position == 2
+        assign stain_handle = value | handleize
+        for wood_value in product.options_by_name[product.options[0]].values
+          assign wood_handle = wood_value | handleize
+          assign wood_down = wood_value | downcase | replace: ' ', '_'
+          for media in product.media
+            if media.alt == 'swatch'
+              assign media_src_down = media.src | downcase
+              if media_src_down contains stain_handle and media_src_down contains wood_down
+                assign attr_key = 'data-ocs-swatch-wood-' | append: wood_handle
+                assign attr_val = media | image_url: width: 800
+                assign ocs_swatch_dataset = ocs_swatch_dataset | append: attr_key | append: '="' | append: attr_val | append: '" '
+                break
+              endif
+            endif
+          endfor
+        endfor
+      endif
       comment
-        END NEW CODE — Robust OCS Swatch Image Lookup
+        END NEW CODE — Scalable OCS Swatch Data Attributes
       endcomment
     -%}
 
@@ -138,18 +148,15 @@
         class="disabled"
       {% endif %}
       {% comment %} ============================================================
-        BEGIN NEW CODE — Write OCS swatch URLs onto input element
-        Purpose: data-ocs-swatch-thumb and data-ocs-swatch-large are read by
-                 ocs-swatch-preview.js on radio change events to update the
-                 inline thumbnail and large preview panel below the gallery.
-                 Only written when a matching swatch image was found above.
+        BEGIN NEW CODE — Output OCS swatch data attributes
+        Purpose: data-ocs-swatch-wood-[handle] attributes are read by
+                 ocs-swatch-preview.js when wood or stain selection changes.
+                 JS picks the attribute matching the currently selected wood.
+                 Only written for stain option (position 2).
         Date:    2026-04-21
       ============================================================ {% endcomment %}
-      {% if ocs_thumb_url %}
-        data-ocs-swatch-thumb="{{ ocs_thumb_url }}"
-        data-ocs-swatch-large="{{ ocs_large_url }}"
-      {% endif %}
-      {% comment %} END NEW CODE — Write OCS swatch URLs onto input element {% endcomment %}
+      {{ ocs_swatch_dataset }}
+      {% comment %} END NEW CODE — Output OCS swatch data attributes {% endcomment %}
       {{ input_dataset }}
     >
     <label for="{{ input_id }}">
